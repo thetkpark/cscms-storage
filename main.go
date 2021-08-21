@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/thanhpk/randstr"
 	"io"
 	"io/ioutil"
 	"log"
@@ -14,9 +15,8 @@ import (
 	"time"
 )
 
-const EncryptionKey = "@i90$5NEWTpF@%rSZlovn@CQETD2FbA2"
-
 func main() {
+	EncryptionKey := randstr.Bytes(32)
 	app := fiber.New(fiber.Config{
 		BodyLimit: 150 << 20,
 	})
@@ -48,7 +48,7 @@ func main() {
 
 		// Encrypt the file
 		ts = time.Now()
-		encryptFilePath := encryptFile(unencryptedFilePath)
+		encryptFilePath := encryptFile(unencryptedFilePath, EncryptionKey)
 		encryptFileDuration := time.Now().Sub(ts)
 
 		//return c.
@@ -65,14 +65,13 @@ func main() {
 	}
 }
 
-func encryptFile(filePath string) string {
+func encryptFile(filePath string, key []byte) string {
 	fmt.Printf("Start encryption")
 
 	file, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		log.Fatalln("unable reading file", err)
 	}
-	key := []byte(EncryptionKey)
 
 	// generate a new aes cipher using our 32 byte long key
 	c, err := aes.NewCipher(key)
@@ -122,11 +121,10 @@ func encryptFile(filePath string) string {
 	return encryptedFilePath
 }
 
-func decryptFile() {
+func decryptFile(key []byte) {
 	startTimestamp := time.Now()
 	fmt.Println("Start decrypting")
 
-	key := []byte(EncryptionKey)
 	ciphertext, err := ioutil.ReadFile("encrypted")
 	// if our program was unable to read the file
 	// print out the reason why it can't

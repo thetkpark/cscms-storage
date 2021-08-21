@@ -35,7 +35,7 @@ func main() {
 		})
 	})
 
-	app.Post("/api/upload", func(c *fiber.Ctx) error {
+	app.Post("/api/file", func(c *fiber.Ctx) error {
 		t1 := time.Now()
 		fileHeader, err := c.FormFile("file")
 		if err != nil {
@@ -63,11 +63,36 @@ func main() {
 
 		//return c.
 		return c.JSON(fiber.Map{
+			"id":               fileId,
 			"path":             encryptFilePath,
 			"save_duration":    saveFileDuration.String(),
 			"encrypt_duration": encryptFileDuration.String(),
 			"total_time":       time.Since(t1).String(),
 		})
+	})
+
+	app.Get("/api/file/:fileId", func(c *fiber.Ctx) error {
+		t1 := time.Now()
+		fileId := c.Params("fileId")
+		if len(fileId) == 0 {
+			return fiber.NewError(fiber.StatusBadRequest, "no fileId present")
+		}
+
+		encryptedFilePath := fmt.Sprintf("%s/%s.enc", "tmp", fileId)
+		if _, err := os.Stat(encryptedFilePath); os.IsNotExist(err) {
+			return fiber.NewError(fiber.StatusNotFound, "file not found")
+		}
+
+		ts := time.Now()
+		decryptFile("tmp", fileId, EncryptionKey)
+		decryptDuration := time.Since(ts)
+
+		decrpytFilePath := fmt.Sprintf("%s/%s", "tmp", fileId)
+
+		fmt.Sprintln(fileId)
+		fmt.Printf("decrypt duration: %s\n", decryptDuration.String())
+		fmt.Printf("total duration: %s\n", time.Since(t1).String())
+		return c.SendFile(decrpytFilePath, true)
 	})
 
 	app.Static("/", "./client/build")
@@ -134,11 +159,11 @@ func encryptFile(filePath string, key []byte) string {
 	return encryptedFilePath
 }
 
-func decryptFile(key []byte) {
+func decryptFile(filePath string, fileId string, key []byte) {
 	startTimestamp := time.Now()
 	fmt.Println("Start decrypting")
 
-	ciphertext, err := ioutil.ReadFile("encrypted")
+	ciphertext, err := ioutil.ReadFile(fmt.Sprintf("%s/%s.enc", filePath, fileId))
 	// if our program was unable to read the file
 	// print out the reason why it can't
 	if err != nil {
@@ -166,7 +191,7 @@ func decryptFile(key []byte) {
 		log.Fatalln("unable to decrypt the file", err)
 	}
 
-	decryptedFile, err := os.Create("decrypt.zip")
+	decryptedFile, err := os.Create(fmt.Sprintf("%s/%s", filePath, fileId))
 	if err != nil {
 		log.Fatalln("unable to create new file on disk", err)
 	}

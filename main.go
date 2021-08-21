@@ -84,15 +84,17 @@ func main() {
 		}
 
 		ts := time.Now()
-		decryptFile("tmp", fileId, EncryptionKey)
+		_ = decryptFile("tmp", fileId, EncryptionKey)
 		decryptDuration := time.Since(ts)
 
-		decrpytFilePath := fmt.Sprintf("%s/%s", "tmp", fileId)
+		decryptFilePath := fmt.Sprintf("%s/%s", "tmp", fileId)
+		//c.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, "test.zip"))
 
 		fmt.Sprintln(fileId)
 		fmt.Printf("decrypt duration: %s\n", decryptDuration.String())
 		fmt.Printf("total duration: %s\n", time.Since(t1).String())
-		return c.SendFile(decrpytFilePath, true)
+		return c.SendFile(decryptFilePath, true)
+		//return c.Send(*byteData)
 	})
 
 	app.Static("/", "./client/build")
@@ -159,7 +161,7 @@ func encryptFile(filePath string, key []byte) string {
 	return encryptedFilePath
 }
 
-func decryptFile(filePath string, fileId string, key []byte) {
+func decryptFile(filePath string, fileId string, key []byte) *[]byte {
 	startTimestamp := time.Now()
 	fmt.Println("Start decrypting")
 
@@ -205,4 +207,5 @@ func decryptFile(filePath string, fileId string, key []byte) {
 	fmt.Printf("Written %d bytes to disk\n", byteWritten)
 	endTimestamp := time.Now()
 	fmt.Printf("Time used %v ms\n", endTimestamp.Sub(startTimestamp).Milliseconds())
+	return &decryptedByte
 }

@@ -37,13 +37,17 @@ function App() {
 	const handleDownload = async event => {
 		event.preventDefault()
 		const start = new Date()
-		const { data } = await axios.get(`http://localhost:5000/api/file/${fileId}`, {
-			responseType: 'blob'
-		})
+		const { data, headers } = await axios.get(
+			`http://localhost:5000/api/file/${fileId}`,
+			{
+				responseType: 'blob'
+			}
+		)
+		console.log(headers)
 		const downloadUrl = window.URL.createObjectURL(new Blob([data]))
 		const link = document.createElement('a')
 		link.href = downloadUrl
-		link.setAttribute('download', 'file.zip') //any other extension
+		link.setAttribute('download', headers['File-Name']) //any other extension
 		document.body.appendChild(link)
 		link.click()
 		link.remove()

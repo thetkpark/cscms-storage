@@ -4,6 +4,7 @@ import axios from 'axios'
 import FormData from 'form-data'
 
 function App() {
+	const [timeUsed, setTimeUsed] = useState(0)
 	const [progress, setProgress] = useState(0)
 	const [selectedFile, setSelectedFile] = useState()
 	const [isFileSelected, setIsFileSelected] = useState(false)
@@ -15,9 +16,10 @@ function App() {
 
 	const handleSubmission = async event => {
 		event.preventDefault()
+		const start = new Date()
 		const formdata = new FormData()
 		formdata.append('file', selectedFile)
-		const res = await axios.post('http://localhost:5000/api/upload', formdata, {
+		const res = await axios.post('/api/upload', formdata, {
 			onUploadProgress: progressEvent => {
 				const uploadPercent = Math.round(
 					(progressEvent.loaded / progressEvent.total) * 100
@@ -25,6 +27,8 @@ function App() {
 				setProgress(uploadPercent)
 			}
 		})
+		const end = new Date()
+		setTimeUsed(end.getTime() - start.getTime())
 		console.log(res.data)
 	}
 
@@ -33,6 +37,7 @@ function App() {
 			<input type="file" name="file" onChange={changeHandler} />
 			<button onClick={handleSubmission}>Submit</button>
 			<p>{progress}</p>
+			<p>{timeUsed} ms</p>
 		</div>
 	)
 }

@@ -5,14 +5,16 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
-	"github.com/thanhpk/randstr"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/google/uuid"
+	"github.com/thanhpk/randstr"
 )
 
 func main() {
@@ -20,6 +22,11 @@ func main() {
 	app := fiber.New(fiber.Config{
 		BodyLimit: 150 << 20,
 	})
+
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+		AllowMethods: "GET POST",
+	}))
 
 	app.Get("/api/ping", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
@@ -29,6 +36,7 @@ func main() {
 	})
 
 	app.Post("/api/upload", func(c *fiber.Ctx) error {
+		t1 := time.Now()
 		fileHeader, err := c.FormFile("file")
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, "unable to get file from form-data", err.Error())
@@ -39,11 +47,13 @@ func main() {
 			return fiber.NewError(fiber.StatusInternalServerError, "unable to create new filename", err.Error())
 		}
 		unencryptedFilePath := fmt.Sprintf("%s/%s", "tmp", fileId.String())
+
 		ts := time.Now()
 		err = c.SaveFile(fileHeader, unencryptedFilePath)
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, "unable to save unencrypt file to disk", err.Error())
 		}
+		defer os.Remove(unencryptedFilePath)
 		saveFileDuration := time.Now().Sub(ts)
 
 		// Encrypt the file
@@ -56,8 +66,11 @@ func main() {
 			"path":             encryptFilePath,
 			"save_duration":    saveFileDuration.String(),
 			"encrypt_duration": encryptFileDuration.String(),
+			"total_time":       time.Since(t1).String(),
 		})
 	})
+
+	app.Static("/", "./client/build")
 
 	err := app.Listen(":5000")
 	if err != nil {

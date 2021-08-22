@@ -63,7 +63,7 @@ func (store *GormFileDataStore) FindByToken(token string) ([]*model.File, error)
 }
 
 func (store *GormFileDataStore) IncreaseVisited(id string) error {
-	tx := store.db.Where(&model.File{ID: id}).UpdateColumns(map[string]interface{}{
+	tx := store.db.Table("files").Where(&model.File{ID: id}).UpdateColumns(map[string]interface{}{
 		"visited":    gorm.Expr("visited + ?", 1),
 		"updated_at": time.Now().UTC(),
 	})

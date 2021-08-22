@@ -130,6 +130,12 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 	}
 	decryptDuration := time.Since(ts)
 
+	// Increase visited count
+	err = h.fileDataStore.IncreaseVisited(file.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "unable to increase count", err.Error())
+	}
+
 	c.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, file.Filename))
 	c.Set("Content-Type", "application/octet-stream")
 

@@ -1,5 +1,6 @@
 files/
 tmp/
+*.db
 # Created by https://www.toptal.com/developers/gitignore/api/go,windows,macos,visualstudiocode,intellij
 # Edit at https://www.toptal.com/developers/gitignore?templates=go,windows,macos,visualstudiocode,intellij
 

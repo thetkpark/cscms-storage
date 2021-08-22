@@ -5,11 +5,12 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"gorm.io/gorm"
+	"time"
 )
 
 type FileDataStore interface {
 	Create(id, token, nonce, filename string, filesize uint64) (*model.File, error)
-	FindByToken(token string) (*model.File, error)
+	FindByToken(token string) ([]*model.File, error)
 	IncreaseVisited(id string) error
 }
 
@@ -31,12 +32,14 @@ func NewGormFileDataStore(l hclog.Logger, db *gorm.DB) (*GormFileDataStore, erro
 
 func (store *GormFileDataStore) Create(id, token, nonce, filename string, filesize uint64) (*model.File, error) {
 	file := &model.File{
-		ID:       id,
-		Token:    token,
-		Nonce:    nonce,
-		Filename: filename,
-		FileSize: filesize,
-		Visited:  0,
+		ID:        id,
+		Token:     token,
+		Nonce:     nonce,
+		Filename:  filename,
+		FileSize:  filesize,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		Visited:   0,
 	}
 
 	tx := store.db.Create(file)
@@ -47,20 +50,23 @@ func (store *GormFileDataStore) Create(id, token, nonce, filename string, filesi
 	return file, nil
 }
 
-func (store *GormFileDataStore) FindByToken(token string) (*model.File, error) {
-	file := &model.File{}
-	tx := store.db.Where(&model.File{Token: token}).First(file)
+func (store *GormFileDataStore) FindByToken(token string) ([]*model.File, error) {
+	var files []*model.File
+	tx := store.db.Where(&model.File{Token: token}).Find(&files)
 	if tx.Error != nil {
 		if !errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 			store.log.Error("error querying file by token")
 		}
 		return nil, tx.Error
 	}
-	return file, nil
+	return files, nil
 }
 
 func (store *GormFileDataStore) IncreaseVisited(id string) error {
-	tx := store.db.Where(&model.File{ID: id}).Update("visited", gorm.Expr("visited + ?", 1))
+	tx := store.db.Where(&model.File{ID: id}).UpdateColumns(map[string]interface{}{
+		"visited":    gorm.Expr("visited + ?", 1),
+		"updated_at": time.Now().UTC(),
+	})
 	if tx.Error != nil {
 		return tx.Error
 	}

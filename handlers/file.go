@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-hclog"
 	"github.com/thetkpark/cscms-temp-storage/data"
+	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"github.com/thetkpark/cscms-temp-storage/service"
 	"io"
 	"os"
@@ -80,6 +81,9 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"id":           fileInfo.ID,
 		"token":        fileInfo.Token,
+		"file_size":    fileInfo.FileSize,
+		"file_name":    fileInfo.Filename,
+		"created_at":   fileInfo.CreatedAt,
 		"encrypt_time": encryptFileDuration.String(),
 		"total_time":   time.Since(t1).String(),
 	})
@@ -87,34 +91,50 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 
 func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 	t1 := time.Now()
-	fileId := c.Params("fileId")
-	nonce := c.Query("key")
-	if len(fileId) == 0 {
-		return fiber.NewError(fiber.StatusBadRequest, "no fileId present")
+	token := c.Params("token")
+
+	// Find file by token
+	files, err := h.fileDataStore.FindByToken(token)
+	if err != nil {
+		return fiber.NewError(fiber.StatusNotFound, "unable to find a file info from db", err.Error())
 	}
 
-	encryptedFilePath := fmt.Sprintf("%s/%s", "tmp", fileId)
+	// Looping to find the unexpired file
+	var file *model.File
+	for _, v := range files {
+		if v.CreatedAt.UTC().Add(time.Hour * 720).After(time.Now().UTC()) {
+			file = v
+			break
+		}
+	}
+	if file == nil {
+		return fiber.NewError(fiber.StatusNotFound, "file not found")
+	}
+
+	encryptedFilePath := fmt.Sprintf("%s/%s", "tmp", file.ID)
 	if _, err := os.Stat(encryptedFilePath); os.IsNotExist(err) {
 		return fiber.NewError(fiber.StatusNotFound, "file not found")
 	}
 
 	// open encrypted file
-	file, err := os.Open(encryptedFilePath)
+	encryptedFile, err := os.Open(encryptedFilePath)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "unable to open encrypted file", err.Error())
 	}
 
+	// Decrypt file
 	ts := time.Now()
-	err = h.encryptionManager.Decrypt(file, nonce, c)
+	err = h.encryptionManager.Decrypt(encryptedFile, file.Nonce, c)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "unable to decrypt", err.Error())
 	}
 	decryptDuration := time.Since(ts)
 
-	c.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, "test.zip"))
+	c.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, file.Filename))
+	c.Set("Content-Type", "application/octet-stream")
 
-	fmt.Sprintln(fileId)
-	fmt.Printf("decrypt duration: %s\n", decryptDuration.String())
-	fmt.Printf("total duration: %s\n", time.Since(t1).String())
+	h.log.Info(file.ID)
+	h.log.Info("decrypt duration", decryptDuration.String())
+	h.log.Info("total duration", time.Since(t1).String())
 	return nil
 }

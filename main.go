@@ -18,7 +18,7 @@ import (
 )
 
 func main() {
-	EncryptionKey := randstr.Bytes(32)
+	var EncryptionKey = randstr.Bytes(32)
 	app := fiber.New(fiber.Config{
 		BodyLimit: 150 << 20,
 	})

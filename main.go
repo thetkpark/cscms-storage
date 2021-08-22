@@ -5,23 +5,31 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"fmt"
+	"github.com/hashicorp/go-hclog"
+	"github.com/thetkpark/cscms-temp-storage/handlers"
+	"github.com/thetkpark/cscms-temp-storage/service"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/google/uuid"
 	"github.com/thanhpk/randstr"
 )
 
 func main() {
+	logger := hclog.Default()
 	var EncryptionKey = randstr.Bytes(32)
 	app := fiber.New(fiber.Config{
 		BodyLimit: 150 << 20,
 	})
+
+	encryptionManager := service.NewAESEncryptionManager(logger)
+
+	fileRouteHandler := handlers.NewFileRoutesHandler(logger, encryptionManager)
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
@@ -35,41 +43,7 @@ func main() {
 		})
 	})
 
-	app.Post("/api/file", func(c *fiber.Ctx) error {
-		t1 := time.Now()
-		fileHeader, err := c.FormFile("file")
-		if err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, "unable to get file from form-data", err.Error())
-		}
-
-		fileId, err := uuid.NewRandom()
-		if err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, "unable to create new filename", err.Error())
-		}
-		unencryptedFilePath := fmt.Sprintf("%s/%s", "tmp", fileId.String())
-
-		ts := time.Now()
-		err = c.SaveFile(fileHeader, unencryptedFilePath)
-		if err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, "unable to save unencrypt file to disk", err.Error())
-		}
-		defer os.Remove(unencryptedFilePath)
-		saveFileDuration := time.Now().Sub(ts)
-
-		// Encrypt the file
-		ts = time.Now()
-		encryptFilePath := encryptFile(unencryptedFilePath, EncryptionKey)
-		encryptFileDuration := time.Now().Sub(ts)
-
-		//return c.
-		return c.JSON(fiber.Map{
-			"id":               fileId,
-			"path":             encryptFilePath,
-			"save_duration":    saveFileDuration.String(),
-			"encrypt_duration": encryptFileDuration.String(),
-			"total_time":       time.Since(t1).String(),
-		})
-	})
+	app.Post("/api/file", fileRouteHandler.UploadFile)
 
 	app.Get("/api/file/:fileId", func(c *fiber.Ctx) error {
 		t1 := time.Now()
@@ -99,6 +73,8 @@ func main() {
 
 	app.Static("/", "./client/build")
 
+	fmt.Println("Before anything else")
+	PrintMemUsage()
 	err := app.Listen(":5000")
 	if err != nil {
 		log.Fatalln("unable to start server", err)
@@ -106,12 +82,16 @@ func main() {
 }
 
 func encryptFile(filePath string, key []byte) string {
-	fmt.Printf("Start encryption")
+	fmt.Printf("Start encryption\n")
 
+	fmt.Println("Before read unencrypted file")
+	PrintMemUsage()
 	file, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		log.Fatalln("unable reading file", err)
 	}
+	fmt.Println("After read unencrypted file")
+	PrintMemUsage()
 
 	// generate a new aes cipher using our 32 byte long key
 	c, err := aes.NewCipher(key)
@@ -143,7 +123,12 @@ func encryptFile(filePath string, key []byte) string {
 	// additional data and appends the result to dst, returning the updated
 	// slice. The nonce must be NonceSize() bytes long and unique for all
 	// time, for a given key.
+	fmt.Println("Before seal")
+	PrintMemUsage()
 	encryptedBytes := gcm.Seal(nonce, nonce, file, nil)
+	file = nil
+	fmt.Println("After seal")
+	PrintMemUsage()
 
 	encryptedFilePath := fmt.Sprintf("%s.enc", filePath)
 	encryptedFile, err := os.Create(encryptedFilePath)
@@ -152,10 +137,14 @@ func encryptFile(filePath string, key []byte) string {
 	}
 	defer encryptedFile.Close()
 
+	fmt.Println("Before write file to disk")
+	PrintMemUsage()
 	byteWritten, err := encryptedFile.Write(encryptedBytes)
 	if err != nil {
 		log.Fatalln("unable to write bytes to file", err)
 	}
+	fmt.Println("After write file to disk")
+	PrintMemUsage()
 
 	fmt.Printf("Written %d bytes to disk\n", byteWritten)
 	return encryptedFilePath
@@ -208,4 +197,18 @@ func decryptFile(filePath string, fileId string, key []byte) *[]byte {
 	endTimestamp := time.Now()
 	fmt.Printf("Time used %v ms\n", endTimestamp.Sub(startTimestamp).Milliseconds())
 	return &decryptedByte
+}
+
+func PrintMemUsage() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
+	fmt.Printf("Alloc = %v MiB", bToMb(m.Alloc))
+	fmt.Printf("\tTotalAlloc = %v MiB", bToMb(m.TotalAlloc))
+	fmt.Printf("\tSys = %v MiB", bToMb(m.Sys))
+	fmt.Printf("\tNumGC = %v\n", m.NumGC)
+}
+
+func bToMb(b uint64) uint64 {
+	return b / 1024 / 1024
 }

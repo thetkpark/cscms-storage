@@ -87,6 +87,36 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 }
 
 func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
+	t1 := time.Now()
+	fileId := c.Params("fileId")
+	nonce := c.Query("key")
+	if len(fileId) == 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "no fileId present")
+	}
+
+	encryptedFilePath := fmt.Sprintf("%s/%s.enc", "tmp", fileId)
+	if _, err := os.Stat(encryptedFilePath); os.IsNotExist(err) {
+		return fiber.NewError(fiber.StatusNotFound, "file not found")
+	}
+
+	// open encrypted file
+	file, err := os.Open(encryptedFilePath)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "unable to open encrypted file", err.Error())
+	}
+
+	ts := time.Now()
+	err = h.encryptionManager.Decrypt(file, nonce, c)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "unable to decrypt", err.Error())
+	}
+	decryptDuration := time.Since(ts)
+
+	//c.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, "test.zip"))
+
+	fmt.Sprintln(fileId)
+	fmt.Printf("decrypt duration: %s\n", decryptDuration.String())
+	fmt.Printf("total duration: %s\n", time.Since(t1).String())
 	return nil
 }
 

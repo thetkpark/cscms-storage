@@ -21,7 +21,7 @@ function App() {
 		const start = new Date()
 		const formdata = new FormData()
 		formdata.append('file', selectedFile)
-		const res = await axios.post('http://localhost:5000/api/file', formdata, {
+		const res = await axios.post('/api/file', formdata, {
 			onUploadProgress: progressEvent => {
 				const uploadPercent = Math.round(
 					(progressEvent.loaded / progressEvent.total) * 100
@@ -37,12 +37,9 @@ function App() {
 	const handleDownload = async event => {
 		event.preventDefault()
 		const start = new Date()
-		const { data, headers } = await axios.get(
-			`http://localhost:5000/api/file/${fileId}`,
-			{
-				responseType: 'blob'
-			}
-		)
+		const { data, headers } = await axios.get(`/${fileId}`, {
+			responseType: 'blob'
+		})
 		console.log(headers)
 		const downloadUrl = window.URL.createObjectURL(new Blob([data]))
 		const link = document.createElement('a')

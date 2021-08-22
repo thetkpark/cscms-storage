@@ -55,7 +55,7 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 	fmt.Println("After save file")
 	PrintMemUsage()
 
-	// Read uncencyrpted file from disk
+	// Read unencrypted file from disk
 	//data, err := os.Open(unencryptedFilePath)
 	fmt.Println("Before read file")
 	PrintMemUsage()

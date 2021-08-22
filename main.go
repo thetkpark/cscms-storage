@@ -1,10 +1,11 @@
 package main
 
 import (
-	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -16,7 +17,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/google/uuid"
+	"github.com/minio/sio"
 	"github.com/thanhpk/randstr"
+	"golang.org/x/crypto/hkdf"
 )
 
 func main() {
@@ -50,36 +53,43 @@ func main() {
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, "unable to create new filename", err.Error())
 		}
-		unencryptedFilePath := fmt.Sprintf("%s/%s", "tmp", fileId.String())
 
+		fmt.Println("Before open file")
+		PrintMemUsage()
 		ts := time.Now()
-		//err = c.SaveFile(fileHeader, unencryptedFilePath)
 		file, err := fileHeader.Open()
 		if err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, "unable to save unencrypt file to disk", err.Error())
+			return fiber.NewError(fiber.StatusInternalServerError, "unable to open multipart file header", err.Error())
 		}
-		buf := &bytes.Buffer{}
-		buf.ReadFrom(file)
-		//defer os.Remove(unencryptedFilePath)
 		saveFileDuration := time.Now().Sub(ts)
+		fmt.Println("After open file")
+		PrintMemUsage()
+
+		fmt.Println("Before encrypt")
+		PrintMemUsage()
+		ts = time.Now()
+		encrypted := encryptFile(file)
+		encryptFileDuration := time.Now().Sub(ts)
+		fmt.Println("After encrypt")
+		PrintMemUsage()
+
+		// Save file to disk
+		fmt.Println("Before save file")
+		PrintMemUsage()
+		encryptFilePath := fmt.Sprintf("%s/%s.enc", "tmp", fileId.String())
+		encryptFile, err := os.Create(encryptFilePath)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "unable to create new file on disk", err.Error())
+		}
+		if _, err := io.Copy(encryptFile, encrypted); err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "unable to copy data to file", err.Error())
+		}
 		fmt.Println("After save file")
 		PrintMemUsage()
 
-		fmt.Println("Before encrypt and save file")
-		PrintMemUsage()
-		// Encrypt the file
-		ts = time.Now()
-		encryptFilePath := encryptFile(unencryptedFilePath, EncryptionKey, buf.Bytes())
-		encryptFileDuration := time.Now().Sub(ts)
-
-		fmt.Println("After encrypt and save file")
-		PrintMemUsage()
-
-		PrintMemUsage()
 		return c.JSON(fiber.Map{
 			"id":               fileId,
-			"path":             encryptFilePath,
-			"save_duration":    saveFileDuration.String(),
+			"open_duration":    saveFileDuration.String(),
 			"encrypt_duration": encryptFileDuration.String(),
 			"total_time":       time.Since(t1).String(),
 		})
@@ -121,95 +131,36 @@ func main() {
 	}
 }
 
-func encryptFile(filePath string, key []byte, file []byte) string {
-	fmt.Printf("Start encryption\n")
-
-	fmt.Println("Before read unencrypted file")
-	PrintMemUsage()
-	//file, err := os.Open(filePath)
-	//if err != nil {
-	//	log.Fatalln("unable reading file", err)
-	//}
-	//defer file.Close()
-	fmt.Println("After read unencrypted file")
-	PrintMemUsage()
-
-	// generate a new aes cipher using our 32 byte long key
-	c, err := aes.NewCipher(key)
-	// if there are any errors, handle them
+func encryptFile(input io.Reader) io.Reader {
+	// the master key used to derive encryption keys
+	// this key must be keep secret
+	masterkey, err := hex.DecodeString("000102030405060708090A0B0C0D0E0FF0E0D0C0B0A090807060504030201000") // use your own key here
 	if err != nil {
-		log.Fatalln("unable to create new cipher", err)
+		log.Fatalln("unable to decode string", err)
 	}
 
-	//var iv [aes.BlockSize]byte
-	//stream := cipher.NewOFB(c, iv[:])
-	//
-	//outFile, err := os.OpenFile(filePath+".enc", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	//if err != nil {
-	//	log.Fatalln(err)
-	//}
-	//defer outFile.Close()
-	//
-	//fmt.Println("Before encrypt")
-	//PrintMemUsage()
-	//writer := &cipher.StreamWriter{S: stream, W: outFile}
-	//// Copy the input file to the output file, encrypting as we go.
-	//if _, err := io.Copy(writer, file); err != nil {
-	//	log.Fatalln(err)
-	//}
-	//fmt.Println("After encrypt")
-	//PrintMemUsage()
-	//
-	//return filePath + ".enc"
+	// generate a random nonce to derive an encryption key from the master key
+	// this nonce must be saved to be able to decrypt the data again - it is not
+	// required to keep it secret
+	var nonce [32]byte
+	if _, err = io.ReadFull(rand.Reader, nonce[:]); err != nil {
+		log.Fatalf("Failed to read random data: %v", err)
+	}
 
-	// gcm or Galois/Counter Mode, is a mode of operation
-	// for symmetric key cryptographic block ciphers
-	gcm, err := cipher.NewGCM(c)
-	// if any error generating new GCM
-	// handle them
+	// derive an encryption key from the master key and the nonce
+	var key [32]byte
+	kdf := hkdf.New(sha256.New, masterkey, nonce[:], nil)
+	if _, err = io.ReadFull(kdf, key[:]); err != nil {
+		log.Fatalf("Failed to derive encryption key: %v", err)
+	}
+
+	encrypted, err := sio.EncryptReader(input, sio.Config{Key: key[:]})
 	if err != nil {
-		log.Fatalln("unable to create new GCM", err)
+		log.Fatalf("Failed to encrypted reader: %v", err)
 	}
 
-	// creates a new byte array the size of the nonce
-	// which must be passed to Seal
-	nonce := make([]byte, gcm.NonceSize())
-	// populates our nonce with a cryptographically secure
-	// random sequence
-	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
-		log.Fatalln("unable to generate nonce", err)
-	}
+	return encrypted
 
-	//here we encrypt our text using the Seal function
-	//Seal encrypts and authenticates plaintext, authenticates the
-	//additional data and appends the result to dst, returning the updated
-	//slice. The nonce must be NonceSize() bytes long and unique for all
-	//time, for a given key.
-	fmt.Println("Before seal")
-	PrintMemUsage()
-	encryptedBytes := gcm.Seal(nonce, nonce, file, nil)
-	file = nil
-	fmt.Println("After seal")
-	PrintMemUsage()
-
-	encryptedFilePath := fmt.Sprintf("%s.enc", filePath)
-	encryptedFile, err := os.Create(encryptedFilePath)
-	if err != nil {
-		log.Fatalln("unable to create new file on disk", err)
-	}
-	defer encryptedFile.Close()
-
-	fmt.Println("Before write file to disk")
-	PrintMemUsage()
-	byteWritten, err := encryptedFile.Write(encryptedBytes)
-	if err != nil {
-		log.Fatalln("unable to write bytes to file", err)
-	}
-	fmt.Println("After write file to disk")
-	PrintMemUsage()
-
-	fmt.Printf("Written %d bytes to disk\n", byteWritten)
-	return encryptedFilePath
 }
 
 func decryptFile(filePath string, fileId string, key []byte) *[]byte {

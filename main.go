@@ -31,9 +31,12 @@ func main() {
 		log.Fatalln("unable to run gorm migration", err)
 	}
 
+	// Create service managers for handler
 	sioEncryptionManager := service.NewSIOEncryptionManager(logger, randstr.String(30))
+	diskStorageManager := service.NewDiskStorageManager(logger, "tmp")
 
-	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore)
+	// Create handlers
+	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager)
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",

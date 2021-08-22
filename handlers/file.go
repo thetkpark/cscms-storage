@@ -7,8 +7,6 @@ import (
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"github.com/thetkpark/cscms-temp-storage/service"
-	"io"
-	"os"
 	"time"
 )
 
@@ -16,24 +14,26 @@ type FileRoutesHandler struct {
 	log               hclog.Logger
 	encryptionManager service.EncryptionManager
 	fileDataStore     data.FileDataStore
+	storageManager    service.StorageManager
 }
 
-func NewFileRoutesHandler(log hclog.Logger, encryptManager service.EncryptionManager, dataStore data.FileDataStore) *FileRoutesHandler {
+func NewFileRoutesHandler(log hclog.Logger, enc service.EncryptionManager, data data.FileDataStore, store service.StorageManager) *FileRoutesHandler {
 	return &FileRoutesHandler{
 		log:               log,
-		encryptionManager: encryptManager,
-		fileDataStore:     dataStore,
+		encryptionManager: enc,
+		fileDataStore:     data,
+		storageManager:    store,
 	}
 }
 
 func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
-	t1 := time.Now()
+	tStart := time.Now()
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "unable to get file from form-data", err.Error())
 	}
 
-	// Create new random uuid
+	// Create new fileId
 	fileId, err := service.GenerateFileId()
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "unable to create file id", err.Error())
@@ -46,24 +46,16 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 	}
 
 	// Encrypt the file
-	ts := time.Now()
+	tEncrypt := time.Now()
 	encrypted, nonce, err := h.encryptionManager.Encrypt(file)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "unable encrypt the file", err.Error())
 	}
-	encryptFileDuration := time.Now().Sub(ts)
-
-	// Create file
-	encryptedFilePath := fmt.Sprintf("%s/%s", "tmp", fileId)
-	encryptedFile, err := os.Create(encryptedFilePath)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "unable to create new file on disk", err.Error())
-	}
-	defer encryptedFile.Close()
+	encryptFileDuration := time.Now().Sub(tEncrypt)
 
 	// Write encrypted file to disk
-	if _, err := io.Copy(encryptedFile, encrypted); err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "unable to write bytes to file", err.Error())
+	if err := h.storageManager.WriteToNewFile(fileId, encrypted); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "unable to write encrypted data to file", err.Error())
 	}
 
 	// Generate file token
@@ -85,12 +77,12 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 		"file_name":    fileInfo.Filename,
 		"created_at":   fileInfo.CreatedAt,
 		"encrypt_time": encryptFileDuration.String(),
-		"total_time":   time.Since(t1).String(),
+		"total_time":   time.Since(tStart).String(),
 	})
 }
 
 func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
-	t1 := time.Now()
+	tStart := time.Now()
 	token := c.Params("token")
 
 	// Find file by token
@@ -111,24 +103,28 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "file not found")
 	}
 
-	encryptedFilePath := fmt.Sprintf("%s/%s", "tmp", file.ID)
-	if _, err := os.Stat(encryptedFilePath); os.IsNotExist(err) {
-		return fiber.NewError(fiber.StatusNotFound, "file not found")
+	// Check if file still exist on storage
+	if exist, err := h.storageManager.Exist(file.ID); !exist {
+		if err == nil {
+			// File is not exist anymore
+			return fiber.NewError(fiber.StatusNotFound, "file not found")
+		}
+		return fiber.NewError(fiber.StatusInternalServerError, "unable to check if file exist", err.Error())
 	}
 
-	// open encrypted file
-	encryptedFile, err := os.Open(encryptedFilePath)
+	// Get encrypted file from storage manager
+	encryptedFile, err := h.storageManager.OpenFile(file.ID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "unable to open encrypted file", err.Error())
 	}
 
 	// Decrypt file
-	ts := time.Now()
+	tEnc := time.Now()
 	err = h.encryptionManager.Decrypt(encryptedFile, file.Nonce, c)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "unable to decrypt", err.Error())
 	}
-	decryptDuration := time.Since(ts)
+	decryptDuration := time.Since(tEnc)
 
 	// Increase visited count
 	err = h.fileDataStore.IncreaseVisited(file.ID)
@@ -141,6 +137,6 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 
 	h.log.Info(file.ID)
 	h.log.Info("decrypt duration", decryptDuration.String())
-	h.log.Info("total duration", time.Since(t1).String())
+	h.log.Info("total duration", time.Since(tStart).String())
 	return nil
 }

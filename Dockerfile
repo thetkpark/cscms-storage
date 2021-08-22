@@ -8,6 +8,7 @@ RUN yarn build
 
 
 FROM golang:alpine as server-builder
+RUN apk add build-base
 WORKDIR /app
 COPY ./go.mod ./
 COPY ./go.sum ./

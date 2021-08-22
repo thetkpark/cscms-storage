@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-hclog"
+	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/service"
 	"io"
 	"os"
@@ -13,12 +14,14 @@ import (
 type FileRoutesHandler struct {
 	log               hclog.Logger
 	encryptionManager service.EncryptionManager
+	fileDataStore     data.FileDataStore
 }
 
-func NewFileRoutesHandler(log hclog.Logger, encryptManager service.EncryptionManager) *FileRoutesHandler {
+func NewFileRoutesHandler(log hclog.Logger, encryptManager service.EncryptionManager, dataStore data.FileDataStore) *FileRoutesHandler {
 	return &FileRoutesHandler{
 		log:               log,
 		encryptionManager: encryptManager,
+		fileDataStore:     dataStore,
 	}
 }
 
@@ -43,7 +46,7 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 
 	// Encrypt the file
 	ts := time.Now()
-	encrypted, key, err := h.encryptionManager.Encrypt(file)
+	encrypted, nonce, err := h.encryptionManager.Encrypt(file)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "unable encrypt the file", err.Error())
 	}
@@ -62,11 +65,23 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "unable to write bytes to file", err.Error())
 	}
 
+	// Generate file token
+	fileToken, err := service.GenerateFileToken()
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "unable to generate file token", err.Error())
+	}
+
+	// Create new fileInfo record in db
+	fileInfo, err := h.fileDataStore.Create(fileId, fileToken, nonce, fileHeader.Filename, uint64(fileHeader.Size))
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "unable to save file info to db", err.Error())
+	}
+
 	return c.JSON(fiber.Map{
-		"id":               fileId,
-		"key":              key,
-		"encrypt_duration": encryptFileDuration.String(),
-		"total_time":       time.Since(t1).String(),
+		"id":           fileInfo.ID,
+		"token":        fileInfo.Token,
+		"encrypt_time": encryptFileDuration.String(),
+		"total_time":   time.Since(t1).String(),
 	})
 }
 

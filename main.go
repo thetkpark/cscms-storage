@@ -7,6 +7,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/hashicorp/go-hclog"
+	"github.com/thetkpark/cscms-temp-storage/handlers"
+	"github.com/thetkpark/cscms-temp-storage/service"
 	"io"
 	"io/ioutil"
 	"log"
@@ -16,17 +19,20 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/google/uuid"
 	"github.com/minio/sio"
 	"github.com/thanhpk/randstr"
 	"golang.org/x/crypto/hkdf"
 )
 
 func main() {
+	logger := hclog.Default()
 	var EncryptionKey = randstr.Bytes(32)
 	app := fiber.New(fiber.Config{
 		BodyLimit: 150 << 20,
 	})
+
+	sioEncryptionManager := service.NewSIOEncryptionManager(logger, randstr.String(30))
+	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager)
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
@@ -40,60 +46,7 @@ func main() {
 		})
 	})
 
-	app.Post("/api/file", func(c *fiber.Ctx) error {
-		fmt.Println("Start")
-		PrintMemUsage()
-		t1 := time.Now()
-		fileHeader, err := c.FormFile("file")
-		if err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, "unable to get file from form-data", err.Error())
-		}
-
-		fileId, err := uuid.NewRandom()
-		if err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, "unable to create new filename", err.Error())
-		}
-
-		fmt.Println("Before open file")
-		PrintMemUsage()
-		ts := time.Now()
-		file, err := fileHeader.Open()
-		if err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, "unable to open multipart file header", err.Error())
-		}
-		saveFileDuration := time.Now().Sub(ts)
-		fmt.Println("After open file")
-		PrintMemUsage()
-
-		fmt.Println("Before encrypt")
-		PrintMemUsage()
-		ts = time.Now()
-		encrypted := encryptFile(file)
-		encryptFileDuration := time.Now().Sub(ts)
-		fmt.Println("After encrypt")
-		PrintMemUsage()
-
-		// Save file to disk
-		fmt.Println("Before save file")
-		PrintMemUsage()
-		encryptFilePath := fmt.Sprintf("%s/%s.enc", "tmp", fileId.String())
-		encryptFile, err := os.Create(encryptFilePath)
-		if err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, "unable to create new file on disk", err.Error())
-		}
-		if _, err := io.Copy(encryptFile, encrypted); err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, "unable to copy data to file", err.Error())
-		}
-		fmt.Println("After save file")
-		PrintMemUsage()
-
-		return c.JSON(fiber.Map{
-			"id":               fileId,
-			"open_duration":    saveFileDuration.String(),
-			"encrypt_duration": encryptFileDuration.String(),
-			"total_time":       time.Since(t1).String(),
-		})
-	})
+	app.Post("/api/file", fileHandler.UploadFile)
 
 	app.Get("/api/file/:fileId", func(c *fiber.Ctx) error {
 		t1 := time.Now()

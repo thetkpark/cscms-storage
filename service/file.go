@@ -63,12 +63,12 @@ func (m *DiskStorageManager) WriteToNewFile(fileName string, reader io.Reader) e
 	}
 
 	// Clean up the file
-	if err := file.Close(); err != nil {
-		m.log.Error("unable close the file", err)
-		return err
-	}
 	if err := file.Sync(); err != nil {
 		m.log.Error("unable sync the file to disk", err)
+		return err
+	}
+	if err := file.Close(); err != nil {
+		m.log.Error("unable close the file", err)
 		return err
 	}
 

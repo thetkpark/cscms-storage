@@ -59,10 +59,16 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "unable to write encrypted data to file", err.Error())
 	}
 
-	// Generate file token
-	fileToken, err := service.GenerateFileToken()
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "unable to generate file token", err.Error())
+	// Check slug
+	fileToken := c.Query("slug")
+	if len(fileToken) == 0 {
+		//No slug, Generate file token
+		fileToken, err = service.GenerateFileToken()
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "unable to generate file token", err.Error())
+		}
+	} else {
+		// Check if slug is available
 	}
 
 	// Create new fileInfo record in db

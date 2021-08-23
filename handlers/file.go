@@ -89,7 +89,6 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 }
 
 func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
-	tStart := time.Now()
 	token := c.Params("token")
 
 	// Find file by token
@@ -117,12 +116,10 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 	}
 
 	// Decrypt file
-	tEnc := time.Now()
 	err = h.encryptionManager.Decrypt(encryptedFile, file.Nonce, c)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "unable to decrypt", err.Error())
 	}
-	decryptDuration := time.Since(tEnc)
 
 	// Increase visited count
 	err = h.fileDataStore.IncreaseVisited(file.ID)
@@ -133,8 +130,5 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 	c.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, file.Filename))
 	c.Set("Content-Type", "application/octet-stream")
 
-	h.log.Info(file.ID)
-	h.log.Info("decrypt duration", decryptDuration.String())
-	h.log.Info("total duration", time.Since(tStart).String())
 	return nil
 }

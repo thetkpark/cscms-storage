@@ -56,10 +56,19 @@ func (m *DiskStorageManager) WriteToNewFile(fileName string, reader io.Reader) e
 		m.log.Error("cannot create new file on disk", err)
 		return err
 	}
-	defer file.Close()
 
 	if _, err = io.Copy(file, reader); err != nil {
 		m.log.Error("unable to write data to file", err)
+		return err
+	}
+
+	// Clean up the file
+	if err := file.Close(); err != nil {
+		m.log.Error("unable close the file", err)
+		return err
+	}
+	if err := file.Sync(); err != nil {
+		m.log.Error("unable sync the file to disk", err)
 		return err
 	}
 

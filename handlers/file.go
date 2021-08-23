@@ -96,7 +96,7 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 	file, err := h.fileDataStore.FindByToken(token)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return fiber.NewError(fiber.StatusNotFound, "file not found", err.Error())
+			return c.Redirect("https://tmp-v2.cscms.me")
 		}
 		return fiber.NewError(fiber.StatusInternalServerError, "unable to get file query", err.Error())
 	}
@@ -105,7 +105,7 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 	if exist, err := h.storageManager.Exist(file.ID); !exist {
 		if err == nil {
 			// File is not exist anymore
-			return fiber.NewError(fiber.StatusNotFound, "file not found")
+			return c.Redirect("https://tmp-v2.cscms.me")
 		}
 		return fiber.NewError(fiber.StatusInternalServerError, "unable to check if file exist", err.Error())
 	}

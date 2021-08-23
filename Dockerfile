@@ -14,10 +14,12 @@ COPY ./go.mod ./
 COPY ./go.sum ./
 RUN go mod download
 COPY ./ ./
-RUN go build -o main .
+RUN go build -o ./server ./cmd/server/main.go
+RUN go build -o ./cleaner ./cmd/cleaner/main.go
 
 FROM alpine:latest
 WORKDIR /app
 COPY --from=client-builder /app/build ./client/build
-COPY --from=server-builder /app/main ./
+COPY --from=server-builder /app/server ./
+COPY --from=server-builder /app/cleaner ./
 CMD ["/app/main"]

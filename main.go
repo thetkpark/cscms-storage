@@ -58,9 +58,9 @@ func main() {
 
 	app.Post("/api/file", fileHandler.UploadFile)
 
-	app.Get("/:token", fileHandler.GetFile)
-
 	app.Static("/", "./client/build")
+
+	app.Get("/:token", fileHandler.GetFile)
 
 	err = app.Listen(":5000")
 	if err != nil {

@@ -22,4 +22,4 @@ WORKDIR /app
 COPY --from=client-builder /app/build ./client/build
 COPY --from=server-builder /app/server ./
 COPY --from=server-builder /app/cleaner ./
-CMD ["/app/main"]
+CMD ["/app/server"]

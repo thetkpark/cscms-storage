@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/hashicorp/go-hclog"
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/handlers"
@@ -9,6 +10,7 @@ import (
 	"gorm.io/gorm"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -18,7 +20,7 @@ import (
 func main() {
 	logger := hclog.Default()
 
-	masterKey, storagePath, sqlitePath := getEnv()
+	masterKey, storagePath, sqlitePath, port, storeDuration := getEnv()
 
 	app := fiber.New(fiber.Config{
 		BodyLimit: 150 << 20,
@@ -48,7 +50,7 @@ func main() {
 	if err != nil {
 		log.Fatalln("unable to open sqlite db", err)
 	}
-	gormFileDataStore, err := data.NewGormFileDataStore(logger, db)
+	gormFileDataStore, err := data.NewGormFileDataStore(logger, db, storeDuration)
 	if err != nil {
 		log.Fatalln("unable to run gorm migration", err)
 	}
@@ -81,18 +83,38 @@ func main() {
 
 	app.Get("/:token", fileHandler.GetFile)
 
-	err = app.Listen(":5000")
+	err = app.Listen(port)
 	if err != nil {
-		log.Fatalln("unable to start server", err)
+		log.Fatalf("unable to start server on %s: %v", port, err)
 	}
 }
 
-func getEnv() (string, string, string) {
+func getEnv() (string, string, string, string, time.Duration) {
+	// Required env
 	key := os.Getenv("MASTER_KEY")
 	storagePath := os.Getenv("STORAGE_PATH")
 	dbPath := os.Getenv("SQLITE_PATH")
 	if len(key) == 0 || len(storagePath) == 0 || len(dbPath) == 0 {
 		log.Fatalln("MASTER_KEY, SQLITE_PATH STORAGE_PATH env must be defined")
 	}
-	return key, storagePath, dbPath
+
+	// Optional env
+	port := os.Getenv("PORT")
+	if len(port) == 0 {
+		port = fmt.Sprintf(":%d", 5000)
+	} else {
+		port = fmt.Sprintf(":%s", port)
+	}
+
+	storeDuration := os.Getenv("STORE_DURATION") // in days
+	duration := time.Hour * 24 * 30
+	if len(storeDuration) != 0 {
+		date, err := strconv.Atoi(storeDuration)
+		if err != nil {
+			log.Fatalln("STORE_DURATION is not a valid number")
+		}
+		duration = time.Hour * 24 * time.Duration(date)
+	}
+
+	return key, storagePath, dbPath, port, duration
 }

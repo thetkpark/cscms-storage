@@ -18,7 +18,6 @@ RUN go build -o main .
 
 FROM alpine:latest
 WORKDIR /app
-RUN mkdir tmp
 COPY --from=client-builder /app/build ./client/build
 COPY --from=server-builder /app/main ./
 CMD ["/app/main"]

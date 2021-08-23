@@ -2,14 +2,17 @@ import './App.css'
 import { useState } from 'react'
 import axios from 'axios'
 import FormData from 'form-data'
+import dayjs from 'dayjs'
+import localizedFormat from 'dayjs/plugin/localizedFormat'
+dayjs.extend(localizedFormat)
 
 function App() {
-	const [timeUsed, setTimeUsed] = useState(0)
-	const [downloadTime, setDownloadTime] = useState(0)
-	const [progress, setProgress] = useState(0)
+	const [timeUsed, setTimeUsed] = useState(-1)
+	const [progress, setProgress] = useState(-1)
 	const [selectedFile, setSelectedFile] = useState()
 	const [isFileSelected, setIsFileSelected] = useState(false)
-	const [fileId, setFileId] = useState('')
+	const [slug, setSlug] = useState('')
+	const [fileData, setFileData] = useState(undefined)
 
 	const changeHandler = event => {
 		setSelectedFile(event.target.files[0])
@@ -21,48 +24,51 @@ function App() {
 		const start = new Date()
 		const formdata = new FormData()
 		formdata.append('file', selectedFile)
-		const res = await axios.post('/api/file', formdata, {
+
+		const res = await axios.post('http://localhost:5000/api/file', formdata, {
 			onUploadProgress: progressEvent => {
 				const uploadPercent = Math.round(
 					(progressEvent.loaded / progressEvent.total) * 100
 				)
 				setProgress(uploadPercent)
-			}
+			},
+			params: { slug }
 		})
 		const end = new Date()
 		setTimeUsed(end.getTime() - start.getTime())
-		console.log(res.data)
+		setFileData(res.data)
 	}
 
-	const handleDownload = async event => {
-		event.preventDefault()
-		const start = new Date()
-		const { data, headers } = await axios.get(`/${fileId}`, {
-			responseType: 'blob'
-		})
-		console.log(headers)
-		const downloadUrl = window.URL.createObjectURL(new Blob([data]))
-		const link = document.createElement('a')
-		link.href = downloadUrl
-		link.setAttribute('download', headers['File-Name']) //any other extension
-		document.body.appendChild(link)
-		link.click()
-		link.remove()
-
-		const end = new Date()
-		setDownloadTime(end.getTime() - start.getTime())
+	const renderFileData = () => {
+		if (fileData === undefined) {
+			return null
+		}
+		return (
+			<div>
+				<h3>Your File</h3>
+				<a
+					href={`${window.location.href}${fileData.token}`}
+				>{`${window.location.href}${fileData.token}`}</a>
+				<p>Token: {fileData.token}</p>
+				<p>File Size: {fileData.file_size} bytes</p>
+				<p>Valid Though: {dayjs(fileData.created_at).add(1, 'month').format('LLL')}</p>
+			</div>
+		)
 	}
 
 	return (
 		<div className="App">
 			<input type="file" name="file" onChange={changeHandler} />
+			<input
+				type="text"
+				name="slug"
+				placeholder="slug"
+				onChange={e => setSlug(e.target.value)}
+			/>
 			<button onClick={handleSubmission}>Submit</button>
-			<p>{progress}</p>
-			<p>{timeUsed} ms</p>
-			<br />
-			<input type="text" placeholder="fileId" onChange={e => setFileId(e.target.value)} />
-			<button onClick={handleDownload}>Submit</button>
-			<p>{downloadTime}</p>
+			{progress < 0 ? null : <p>{progress}%</p>}
+			{timeUsed < 0 ? null : <p>{timeUsed}ms</p>}
+			{renderFileData()}
 		</div>
 	)
 }

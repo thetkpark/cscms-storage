@@ -19,8 +19,15 @@ type DiskStorageManager struct {
 	path string
 }
 
-func NewDiskStorageManager(log hclog.Logger, path string) *DiskStorageManager {
-	return &DiskStorageManager{path: path, log: log}
+func NewDiskStorageManager(log hclog.Logger, path string) (*DiskStorageManager, error) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		err = os.MkdirAll(path, 0755)
+		if err != nil {
+			log.Error("cannot create directory for file storage", err)
+			return nil, err
+		}
+	}
+	return &DiskStorageManager{path: path, log: log}, nil
 }
 
 func (m *DiskStorageManager) getFilePath(fileName string) string {
@@ -28,6 +35,7 @@ func (m *DiskStorageManager) getFilePath(fileName string) string {
 }
 
 func (m *DiskStorageManager) CreateFile(fileName string) (io.Writer, error) {
+	fmt.Println("filePath=", m.getFilePath(fileName))
 	file, err := os.Create(m.getFilePath(fileName))
 	if err != nil {
 		m.log.Error("cannot create new file on disk", err)

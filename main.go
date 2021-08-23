@@ -36,7 +36,10 @@ func main() {
 
 	// Create service managers for handler
 	sioEncryptionManager := service.NewSIOEncryptionManager(logger, masterKey)
-	diskStorageManager := service.NewDiskStorageManager(logger, storagePath)
+	diskStorageManager, err := service.NewDiskStorageManager(logger, storagePath)
+	if err != nil {
+		log.Fatalln("unable to create disk storage manager")
+	}
 
 	// Create handlers
 	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager)

@@ -1,12 +1,13 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-hclog"
 	"github.com/thetkpark/cscms-temp-storage/data"
-	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"github.com/thetkpark/cscms-temp-storage/service"
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -86,21 +87,12 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 	token := c.Params("token")
 
 	// Find file by token
-	files, err := h.fileDataStore.FindByToken(token)
+	file, err := h.fileDataStore.FindByToken(token)
 	if err != nil {
-		return fiber.NewError(fiber.StatusNotFound, "unable to find a file info from db", err.Error())
-	}
-
-	// Looping to find the unexpired file
-	var file *model.File
-	for _, v := range files {
-		if v.CreatedAt.UTC().Add(time.Hour * 720).After(time.Now().UTC()) {
-			file = v
-			break
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fiber.NewError(fiber.StatusNotFound, "file not found", err.Error())
 		}
-	}
-	if file == nil {
-		return fiber.NewError(fiber.StatusNotFound, "file not found")
+		return fiber.NewError(fiber.StatusInternalServerError, "unable to get file query", err.Error())
 	}
 
 	// Check if file still exist on storage

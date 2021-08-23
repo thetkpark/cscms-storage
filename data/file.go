@@ -10,7 +10,7 @@ import (
 
 type FileDataStore interface {
 	Create(id, token, nonce, filename string, filesize uint64) (*model.File, error)
-	FindByToken(token string) ([]*model.File, error)
+	FindByToken(token string) (*model.File, error)
 	IncreaseVisited(id string) error
 }
 
@@ -50,7 +50,7 @@ func (store *GormFileDataStore) Create(id, token, nonce, filename string, filesi
 	return file, nil
 }
 
-func (store *GormFileDataStore) FindByToken(token string) ([]*model.File, error) {
+func (store *GormFileDataStore) FindByToken(token string) (*model.File, error) {
 	var files []*model.File
 	tx := store.db.Where(&model.File{Token: token}).Find(&files)
 	if tx.Error != nil {
@@ -59,7 +59,19 @@ func (store *GormFileDataStore) FindByToken(token string) ([]*model.File, error)
 		}
 		return nil, tx.Error
 	}
-	return files, nil
+
+	var file *model.File
+	for _, v := range files {
+		if v.CreatedAt.UTC().Add(time.Hour * 720).After(time.Now().UTC()) {
+			file = v
+			break
+		}
+	}
+
+	if file == nil {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return file, nil
 }
 
 func (store *GormFileDataStore) IncreaseVisited(id string) error {

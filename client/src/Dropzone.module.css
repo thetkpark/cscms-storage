@@ -1,0 +1,19 @@
+.DropZoneTextContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 50vh;
+}
+
+.DropZoneText {
+    font-size: 1.3em;
+    margin-top: 30px;
+    color: #a4e1ef;
+}
+
+.Dropzone {
+    width: 65vw;
+    height: 50vh;
+    border: 2px dashed #a4e1ef;
+}

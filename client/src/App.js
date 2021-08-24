@@ -1,10 +1,10 @@
-import './App.css'
 import { useState } from 'react'
 import axios from 'axios'
 import FormData from 'form-data'
 import dayjs from 'dayjs'
 import localizedFormat from 'dayjs/plugin/localizedFormat'
 import Dropzone from './Dropzone'
+import styles from './App.module.css'
 dayjs.extend(localizedFormat)
 
 function App() {
@@ -71,7 +71,7 @@ function App() {
 	}
 
 	return (
-		<div className="App">
+		<div className={styles.App}>
 			<Dropzone onDrop={onDrop} selectedFilename={selectedFilename} />
 			<input
 				type="text"

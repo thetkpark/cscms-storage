@@ -7,7 +7,6 @@ import { Form } from 'react-bootstrap'
 import FileDataModal from './Modal'
 
 function App() {
-	const [timeUsed, setTimeUsed] = useState(-1)
 	const [progress, setProgress] = useState(-1)
 	const [selectedFile, setSelectedFile] = useState()
 	const [isFileSelected, setIsFileSelected] = useState(false)
@@ -19,7 +18,6 @@ function App() {
 
 	const onDrop = (acceptedFiles, rejectedFiles) => {
 		if (acceptedFiles.length === 1) {
-			console.log(acceptedFiles)
 			setError('')
 			setIsFileSelected(true)
 			setSelectedFile(acceptedFiles[0])
@@ -35,7 +33,6 @@ function App() {
 
 	const handleSubmission = async event => {
 		event.preventDefault()
-		const start = new Date()
 		const formdata = new FormData()
 		formdata.append('file', selectedFile)
 
@@ -48,10 +45,19 @@ function App() {
 			},
 			params: { slug }
 		})
-		const end = new Date()
-		setTimeUsed(end.getTime() - start.getTime())
 		setFileData(res.data)
 		setShowModal(true)
+	}
+
+	const closeAndReset = () => {
+		setShowModal(false)
+		setProgress(-1)
+		setSelectedFile()
+		setIsFileSelected(false)
+		setSlug('')
+		setFileData(undefined)
+		setError('')
+		setSelectedFilename('')
 	}
 
 	return (
@@ -77,11 +83,7 @@ function App() {
 				{progress < 0 ? null : <p>{progress}%</p>}
 				{error.length > 0 ? <p>{error}</p> : null}
 			</div>
-			<FileDataModal
-				show={showModal}
-				onClose={() => setShowModal(false)}
-				fileData={fileData}
-			/>
+			<FileDataModal show={showModal} onClose={closeAndReset} fileData={fileData} />
 		</div>
 	)
 }

@@ -22,7 +22,7 @@ const Dropzone = ({ onDrop, selectedFilename }) => {
 		<div className={styles.Dropzone} {...getRootProps()}>
 			<input className="dropzone-input" {...getInputProps()} />
 			<div className={styles.DropZoneTextContainer}>
-				<FontAwesomeIcon icon={faFileUpload} size="5x" color="#a4e1ef" />
+				<FontAwesomeIcon icon={faFileUpload} size="5x" color="#1a1a1a" />
 				<p className={styles.DropZoneText}>{renderText()}</p>
 			</div>
 		</div>

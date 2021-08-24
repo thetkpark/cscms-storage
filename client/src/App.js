@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import axios from 'axios'
 import FormData from 'form-data'
-import dayjs from 'dayjs'
-import localizedFormat from 'dayjs/plugin/localizedFormat'
 import Dropzone from './Dropzone'
 import styles from './App.module.css'
 import { Form } from 'react-bootstrap'
-dayjs.extend(localizedFormat)
+import FileDataModal from './Modal'
 
 function App() {
 	const [timeUsed, setTimeUsed] = useState(-1)
@@ -17,6 +15,7 @@ function App() {
 	const [fileData, setFileData] = useState(undefined)
 	const [error, setError] = useState('')
 	const [selectedFilename, setSelectedFilename] = useState('')
+	const [showModal, setShowModal] = useState(false)
 
 	const onDrop = (acceptedFiles, rejectedFiles) => {
 		if (acceptedFiles.length === 1) {
@@ -40,7 +39,7 @@ function App() {
 		const formdata = new FormData()
 		formdata.append('file', selectedFile)
 
-		const res = await axios.post('/api/file', formdata, {
+		const res = await axios.post('http://localhost:5000/api/file', formdata, {
 			onUploadProgress: progressEvent => {
 				const uploadPercent = Math.round(
 					(progressEvent.loaded / progressEvent.total) * 100
@@ -52,23 +51,7 @@ function App() {
 		const end = new Date()
 		setTimeUsed(end.getTime() - start.getTime())
 		setFileData(res.data)
-	}
-
-	const renderFileData = () => {
-		if (fileData === undefined) {
-			return null
-		}
-		return (
-			<div>
-				<h3>Your File</h3>
-				<a
-					href={`${window.location.href}${fileData.token}`}
-				>{`${window.location.href}${fileData.token}`}</a>
-				<p>Token: {fileData.token}</p>
-				<p>File Size: {fileData.file_size} bytes</p>
-				<p>Valid Though: {dayjs(fileData.created_at).add(1, 'month').format('LLL')}</p>
-			</div>
-		)
+		setShowModal(true)
 	}
 
 	return (
@@ -92,10 +75,13 @@ function App() {
 					</Form>
 				</div>
 				{progress < 0 ? null : <p>{progress}%</p>}
-				{timeUsed < 0 ? null : <p>{timeUsed}ms</p>}
-				{renderFileData()}
 				{error.length > 0 ? <p>{error}</p> : null}
 			</div>
+			<FileDataModal
+				show={showModal}
+				onClose={() => setShowModal(false)}
+				fileData={fileData}
+			/>
 		</div>
 	)
 }

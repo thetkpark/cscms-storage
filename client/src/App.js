@@ -4,6 +4,7 @@ import axios from 'axios'
 import FormData from 'form-data'
 import dayjs from 'dayjs'
 import localizedFormat from 'dayjs/plugin/localizedFormat'
+import Dropzone from './Dropzone'
 dayjs.extend(localizedFormat)
 
 function App() {
@@ -13,10 +14,23 @@ function App() {
 	const [isFileSelected, setIsFileSelected] = useState(false)
 	const [slug, setSlug] = useState('')
 	const [fileData, setFileData] = useState(undefined)
+	const [error, setError] = useState('')
+	const [selectedFilename, setSelectedFilename] = useState('')
 
-	const changeHandler = event => {
-		setSelectedFile(event.target.files[0])
-		setIsFileSelected(true)
+	const onDrop = (acceptedFiles, rejectedFiles) => {
+		if (acceptedFiles.length === 1) {
+			console.log(acceptedFiles)
+			setError('')
+			setIsFileSelected(true)
+			setSelectedFile(acceptedFiles[0])
+			setSelectedFilename(acceptedFiles[0].name)
+		} else {
+			if (rejectedFiles[0].errors[0].code === 'too-many-files') {
+				setError('Too many files')
+			} else if (rejectedFiles[0].errors[0].code === 'file-too-large') {
+				setError('File too big')
+			} else setError('File not accepted')
+		}
 	}
 
 	const handleSubmission = async event => {
@@ -58,7 +72,7 @@ function App() {
 
 	return (
 		<div className="App">
-			<input type="file" name="file" onChange={changeHandler} />
+			<Dropzone onDrop={onDrop} selectedFilename={selectedFilename} />
 			<input
 				type="text"
 				name="slug"
@@ -69,6 +83,7 @@ function App() {
 			{progress < 0 ? null : <p>{progress}%</p>}
 			{timeUsed < 0 ? null : <p>{timeUsed}ms</p>}
 			{renderFileData()}
+			{error.length > 0 ? <p>{error}</p> : null}
 		</div>
 	)
 }

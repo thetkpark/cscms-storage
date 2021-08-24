@@ -5,6 +5,7 @@ import dayjs from 'dayjs'
 import localizedFormat from 'dayjs/plugin/localizedFormat'
 import Dropzone from './Dropzone'
 import styles from './App.module.css'
+import { Form } from 'react-bootstrap'
 dayjs.extend(localizedFormat)
 
 function App() {
@@ -72,18 +73,29 @@ function App() {
 
 	return (
 		<div className={styles.App}>
-			<Dropzone onDrop={onDrop} selectedFilename={selectedFilename} />
-			<input
-				type="text"
-				name="slug"
-				placeholder="slug"
-				onChange={e => setSlug(e.target.value)}
-			/>
-			<button onClick={handleSubmission}>Submit</button>
-			{progress < 0 ? null : <p>{progress}%</p>}
-			{timeUsed < 0 ? null : <p>{timeUsed}ms</p>}
-			{renderFileData()}
-			{error.length > 0 ? <p>{error}</p> : null}
+			<div className={styles.AppContainer}>
+				{/* <h1 className={styles.Heading}>CSCMS Temp Storage</h1> */}
+				<Dropzone onDrop={onDrop} selectedFilename={selectedFilename} />
+				<div className={styles.FormContainer}>
+					<Form className={styles.Form} onSubmit={handleSubmission}>
+						<Form.Group controlId="formBasicSlug">
+							<Form.Control
+								type="text"
+								placeholder="Enter slug"
+								value={slug}
+								onChange={e => setSlug(e.target.value)}
+							/>
+						</Form.Group>
+						<Form.Group controlId="formBasicSubmit">
+							<Form.Control type="submit" value="Submit" />
+						</Form.Group>
+					</Form>
+				</div>
+				{progress < 0 ? null : <p>{progress}%</p>}
+				{timeUsed < 0 ? null : <p>{timeUsed}ms</p>}
+				{renderFileData()}
+				{error.length > 0 ? <p>{error}</p> : null}
+			</div>
 		</div>
 	)
 }

@@ -29,3 +29,33 @@
   50%{background-position:100% 50%}
   100%{background-position:0% 50%}
 }
+
+.Form {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  align-items: center;
+  min-width: 320px;
+  margin: 20px;
+}
+
+.FormContainer {
+  margin: 30px;
+}
+
+.AppContainer {
+  padding: 30px 40px 10px;
+
+  background: rgba( 255, 255, 255, 0.60 );
+  box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
+  backdrop-filter: blur( 15.0px );
+  -webkit-backdrop-filter: blur( 15.0px );
+  border-radius: 10px;
+  border: 1px solid rgba( 255, 255, 255, 0.18 );
+}
+
+.Heading {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #a1a1a1;
+}

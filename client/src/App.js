@@ -37,7 +37,7 @@ function App() {
 		const formdata = new FormData()
 		formdata.append('file', selectedFile)
 
-		const res = await axios.post('/api/file', formdata, {
+		const res = await axios.post('http://localhost:5000/api/file', formdata, {
 			onUploadProgress: progressEvent => {
 				const uploadPercent = Math.round(
 					(progressEvent.loaded / progressEvent.total) * 100

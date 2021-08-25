@@ -1,6 +1,7 @@
 import React from 'react'
 import { useDropzone } from 'react-dropzone'
 import { ProgressBar } from '@adobe/react-spectrum'
+import Upload from '@spectrum-icons/illustrations/Upload'
 import FileShareIcon from '@spectrum-icons/workflow/FileShare'
 import styles from './Dropzone.module.css'
 
@@ -31,7 +32,14 @@ const Dropzone = ({ onDrop, selectedFilename, progress }) => {
 	return (
 		<div className={styles.Dropzone} {...getRootProps()}>
 			<input className="dropzone-input" {...getInputProps()} />
-			<div className={styles.DropZoneTextContainer}>
+			<div
+				className={styles.DropZoneTextContainer}
+				style={
+					isDragActive || selectedFilename.length !== 0
+						? { border: '2px dashed #3fa13f' }
+						: { border: '2px dashed #3f3f3f' }
+				}
+			>
 				<FileShareIcon
 					size="XXL"
 					color={isDragActive || selectedFilename.length !== 0 ? 'positive' : ''}

@@ -3182,6 +3182,13 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
+"@spectrum-icons/illustrations@^3.2.2":
+  version "3.2.2"
+  resolved "https://registry.yarnpkg.com/@spectrum-icons/illustrations/-/illustrations-3.2.2.tgz#8f8be43faeaca731e676f96ff1c2ddd68e765169"
+  integrity sha512-tezmwR5gwYvLhItj1brGl/4JxaVMZck70HVP5V2PGn/eFgsY/Dt2b8zK1E+jedU9GXStiTNoE8KZAaI2+Sau9w==
+  dependencies:
+    "@adobe/react-spectrum-ui" "^1.0.0"
+
 "@spectrum-icons/ui@^3.2.1":
   version "3.2.1"
   resolved "https://registry.yarnpkg.com/@spectrum-icons/ui/-/ui-3.2.1.tgz#9ffbb9f0144f446999fde2434a4c38896a0e9dc6"

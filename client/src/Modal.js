@@ -1,8 +1,5 @@
 import dayjs from 'dayjs'
 import localizedFormat from 'dayjs/plugin/localizedFormat'
-// import { Modal, Button } from 'react-bootstrap'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faClipboard } from '@fortawesome/free-solid-svg-icons'
 import {
 	DialogContainer,
 	Dialog,
@@ -15,6 +12,7 @@ import {
 	Flex,
 	Button
 } from '@adobe/react-spectrum'
+import { formatBytes } from './utils/formatBytes'
 dayjs.extend(localizedFormat)
 
 const FileDataModal = ({ show, fileData, closeDialog }) => {
@@ -31,12 +29,15 @@ const FileDataModal = ({ show, fileData, closeDialog }) => {
 				<Content>
 					<Flex direction="column" justifyContent="start">
 						<Flex direction="row" justifyContent="start">
-							<Text>Download at: </Text>
-							<Link>
-								<a href={location}>{location}</a>
-							</Link>
+							<Text>
+								Download URL:{' '}
+								<Link>
+									<a href={location}>{location}</a>
+								</Link>
+							</Text>
 						</Flex>
-						<Text>File Size: {fileData.file_size} bytes</Text>
+						<Text>File name: {fileData.file_name}</Text>
+						<Text>File size: {formatBytes(fileData.file_size)}</Text>
 						<Text>
 							Valid Though: {dayjs(fileData.created_at).add(1, 'month').format('LLL')}
 						</Text>

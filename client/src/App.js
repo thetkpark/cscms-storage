@@ -89,7 +89,6 @@ function App() {
 						</Flex>
 					</Form>
 				</div>
-				{progress < 0 ? null : <p>{progress}%</p>}
 				{error.length > 0 ? <p>{error}</p> : null}
 			</div>
 			<FileDataModal show={showModal} onClose={closeAndReset} fileData={fileData} />

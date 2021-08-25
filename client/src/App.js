@@ -23,9 +23,9 @@ function App() {
 			setSelectedFilename(acceptedFiles[0].name)
 		} else {
 			if (rejectedFiles[0].errors[0].code === 'too-many-files') {
-				setError('Too many files')
+				setError('Too many files. You can only upload one file at a time')
 			} else if (rejectedFiles[0].errors[0].code === 'file-too-large') {
-				setError('File too big')
+				setError('File too big. The size limit is 100MB')
 			} else setError('File not accepted')
 		}
 	}
@@ -66,6 +66,7 @@ function App() {
 					onDrop={onDrop}
 					selectedFilename={selectedFilename}
 					progress={progress}
+					error={error}
 				/>
 				<div className={styles.FormContainer}>
 					<Form className={styles.Form} onSubmit={handleSubmission}>
@@ -86,7 +87,6 @@ function App() {
 						</Flex>
 					</Form>
 				</div>
-				{error.length > 0 ? <p>{error}</p> : null}
 			</div>
 			<FileDataModal
 				show={showModal}

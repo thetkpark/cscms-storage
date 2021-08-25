@@ -37,7 +37,7 @@ function App() {
 		const formdata = new FormData()
 		formdata.append('file', selectedFile)
 
-		const res = await axios.post('/api/file', formdata, {
+		const res = await axios.post('http://localhost:5000/api/file', formdata, {
 			onUploadProgress: progressEvent => {
 				const uploadPercent = Math.round(
 					(progressEvent.loaded / progressEvent.total) * 100
@@ -50,7 +50,7 @@ function App() {
 		setShowModal(true)
 	}
 
-	const closeAndReset = () => {
+	const closeDialogAndReset = () => {
 		setShowModal(false)
 		setProgress(-1)
 		setSelectedFile()
@@ -91,7 +91,11 @@ function App() {
 				</div>
 				{error.length > 0 ? <p>{error}</p> : null}
 			</div>
-			<FileDataModal show={showModal} onClose={closeAndReset} fileData={fileData} />
+			<FileDataModal
+				show={showModal}
+				closeDialog={closeDialogAndReset}
+				fileData={fileData}
+			/>
 		</div>
 	)
 }

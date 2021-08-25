@@ -77,7 +77,7 @@ function App() {
 								label="Custom slug for accessing the file (Optional)"
 								placeholder="Slug"
 								value={slug}
-								onChange={e => setSlug(e.target.value)}
+								onChange={e => setSlug(e)}
 								width="300px"
 								type="text"
 								inputMode="text"

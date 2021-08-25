@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import axios from 'axios'
 import FormData from 'form-data'
+import { Form, TextField, Button, Text, Flex } from '@adobe/react-spectrum'
+import UploadIcon from '@spectrum-icons/workflow/UploadToCloudOutline'
 import Dropzone from './Dropzone'
 import styles from './App.module.css'
-import { Form } from 'react-bootstrap'
 import FileDataModal from './Modal'
 
 function App() {
@@ -64,20 +65,28 @@ function App() {
 		<div className={styles.App}>
 			<div className={styles.AppContainer}>
 				{/* <h1 className={styles.Heading}>CSCMS Temp Storage</h1> */}
-				<Dropzone onDrop={onDrop} selectedFilename={selectedFilename} />
+				<Dropzone
+					onDrop={onDrop}
+					selectedFilename={selectedFilename}
+					progress={progress}
+				/>
 				<div className={styles.FormContainer}>
 					<Form className={styles.Form} onSubmit={handleSubmission}>
-						<Form.Group controlId="formBasicSlug">
-							<Form.Control
-								type="text"
-								placeholder="Enter slug"
+						<Flex direction="row" gap="size-300" alignItems="end" justifyContent="center">
+							<TextField
+								label="Custom slug for accessing the file (Optional)"
+								placeholder="Slug"
 								value={slug}
 								onChange={e => setSlug(e.target.value)}
+								width="300px"
+								type="text"
+								inputMode="text"
 							/>
-						</Form.Group>
-						<Form.Group controlId="formBasicSubmit">
-							<Form.Control type="submit" value="Submit" />
-						</Form.Group>
+							<Button variant="primary" width="100px" type="submit">
+								<UploadIcon />
+								<Text>Upload</Text>
+							</Button>
+						</Flex>
 					</Form>
 				</div>
 				{progress < 0 ? null : <p>{progress}%</p>}

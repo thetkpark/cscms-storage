@@ -10,7 +10,6 @@ import FileDataModal from './Modal'
 function App() {
 	const [progress, setProgress] = useState(-1)
 	const [selectedFile, setSelectedFile] = useState()
-	const [isFileSelected, setIsFileSelected] = useState(false)
 	const [slug, setSlug] = useState('')
 	const [fileData, setFileData] = useState(undefined)
 	const [error, setError] = useState('')
@@ -20,7 +19,6 @@ function App() {
 	const onDrop = (acceptedFiles, rejectedFiles) => {
 		if (acceptedFiles.length === 1) {
 			setError('')
-			setIsFileSelected(true)
 			setSelectedFile(acceptedFiles[0])
 			setSelectedFilename(acceptedFiles[0].name)
 		} else {
@@ -54,7 +52,6 @@ function App() {
 		setShowModal(false)
 		setProgress(-1)
 		setSelectedFile()
-		setIsFileSelected(false)
 		setSlug('')
 		setFileData(undefined)
 		setError('')

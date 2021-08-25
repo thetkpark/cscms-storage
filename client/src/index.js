@@ -1,13 +1,16 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
+import { Provider, lightTheme } from '@adobe/react-spectrum'
 import './index.css'
-import 'bootstrap/dist/css/bootstrap.min.css'
+// import 'bootstrap/dist/css/bootstrap.min.css'
 import App from './App'
 import reportWebVitals from './reportWebVitals'
 
 ReactDOM.render(
 	<React.StrictMode>
-		<App />
+		<Provider theme={lightTheme} colorScheme="light">
+			<App />
+		</Provider>
 	</React.StrictMode>,
 	document.getElementById('root')
 )

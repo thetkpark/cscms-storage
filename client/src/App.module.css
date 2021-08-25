@@ -30,14 +30,14 @@
   100%{background-position:0% 50%}
 }
 
-.Form {
+/* .Form {
   display: flex;
   flex-direction: row;
-  justify-content: space-evenly;
+  justify-content: center;
   align-items: center;
   min-width: 320px;
   margin: 20px;
-}
+} */
 
 .FormContainer {
   margin: 30px;

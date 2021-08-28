@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import axios from 'axios'
 import FormData from 'form-data'
+import ReactGA from 'react-ga'
 import { Form, TextField, Button, Text, Flex } from '@adobe/react-spectrum'
 import UploadIcon from '@spectrum-icons/workflow/UploadToCloudOutline'
 import Dropzone from './Dropzone'
@@ -16,11 +17,17 @@ function App() {
 	const [selectedFilename, setSelectedFilename] = useState('')
 	const [showModal, setShowModal] = useState(false)
 
+	useEffect(() => {
+		ReactGA.initialize('G-S7NPY62JTS')
+		ReactGA.pageview(window.location.pathname)
+	}, [])
+
 	const onDrop = (acceptedFiles, rejectedFiles) => {
 		if (acceptedFiles.length === 1) {
 			setError('')
 			setSelectedFile(acceptedFiles[0])
 			setSelectedFilename(acceptedFiles[0].name)
+			
 		} else {
 			if (rejectedFiles[0].errors[0].code === 'too-many-files') {
 				setError('Too many files. You can only upload one file at a time')
@@ -35,7 +42,7 @@ function App() {
 		const formdata = new FormData()
 		formdata.append('file', selectedFile)
 
-		const res = await axios.post('http://localhost:5000/api/file', formdata, {
+		const res = await axios.post('/api/file', formdata, {
 			onUploadProgress: progressEvent => {
 				const uploadPercent = Math.round(
 					(progressEvent.loaded / progressEvent.total) * 100
@@ -46,6 +53,12 @@ function App() {
 		})
 		setFileData(res.data)
 		setShowModal(true)
+		console.log(selectedFile.size);
+		// ReactGA.event({
+		// 	category: 'file',
+		// 	action: 'Upload file',
+		// 	value: selectedFile
+		// })
 	}
 
 	const closeDialogAndReset = () => {

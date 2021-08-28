@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import axios from 'axios'
 import FormData from 'form-data'
 import ReactGA from 'react-ga'

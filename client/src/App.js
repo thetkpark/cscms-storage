@@ -53,12 +53,11 @@ function App() {
 		})
 		setFileData(res.data)
 		setShowModal(true)
-		console.log(selectedFile.size);
-		// ReactGA.event({
-		// 	category: 'file',
-		// 	action: 'Upload file',
-		// 	value: selectedFile
-		// })
+		ReactGA.event({
+			category: 'file',
+			action: 'Upload file',
+			value: selectedFile.size
+		})
 	}
 
 	const closeDialogAndReset = () => {

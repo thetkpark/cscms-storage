@@ -30,14 +30,15 @@
   100%{background-position:0% 50%}
 }
 
-/* .Form {
+.Form {
   display: flex;
   flex-direction: row;
   justify-content: center;
-  align-items: center;
+  align-items: flex-end;
   min-width: 320px;
   margin: 20px;
-} */
+  gap:16px;
+}
 
 .FormContainer {
   margin: 30px;
@@ -45,17 +46,33 @@
 
 .AppContainer {
   padding: 30px 40px 10px;
-
   background: rgba( 255, 255, 255, 0.60 );
   box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
   backdrop-filter: blur( 15.0px );
   -webkit-backdrop-filter: blur( 15.0px );
   border-radius: 10px;
   border: 1px solid rgba( 255, 255, 255, 0.18 );
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .Heading {
   font-size: 2.5rem;
   font-weight: bold;
   color: #a1a1a1;
+}
+
+@media screen and (max-width: 767px) {
+  .Form {
+    flex-direction: column;
+    margin: 10px 0;
+    align-items: center;
+  }
+  .FormContainer {
+    margin: 0;
+  }
+  .AppContainer {
+    padding: 2.5rem 1rem 1.5rem;
+  }
 }

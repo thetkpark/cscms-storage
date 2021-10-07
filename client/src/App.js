@@ -81,8 +81,7 @@ function App() {
 					error={error}
 				/>
 				<div className={styles.FormContainer}>
-					<Form className={styles.Form} onSubmit={handleSubmission}>
-						<Flex direction="row" gap="size-300" alignItems="end" justifyContent="center">
+					<form className={styles.Form} onSubmit={handleSubmission}>
 							<TextField
 								label="Custom slug for accessing the file (Optional)"
 								placeholder="Slug"
@@ -92,12 +91,11 @@ function App() {
 								type="text"
 								inputMode="text"
 							/>
-							<Button variant="primary" width="100px" type="submit">
+							<Button variant="primary"  type="submit">
 								<UploadIcon />
 								<Text>Upload</Text>
 							</Button>
-						</Flex>
-					</Form>
+					</form>
 				</div>
 			</div>
 			<FileDataModal

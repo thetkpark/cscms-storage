@@ -25,3 +25,13 @@
     border: 1px solid rgba( 255, 255, 255, 0.18 ); */
 
 }
+@media screen and (max-width: 767px) {
+    .Dropzone {
+        width: 70vw;
+    }
+    .DropZoneTextContainer {
+        font-size: 1.1rem;
+        text-align: center;
+        padding: 0 .5rem;
+    }
+}

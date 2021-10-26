@@ -49,7 +49,7 @@ func main() {
 
 	// Create data store
 	//dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbUsername, dbPassword, dbHost, dbPort, dbName)
-	dsn := fmt.Sprintf("root:%s@tcp(common-mariadb-srv:3306)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbPassword, dbName)
+	dsn := fmt.Sprintf("%s:%s@tcp(common-mariadb-srv:3306)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbUsername, dbPassword, dbName)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalln("unable to open sqlite db", err)

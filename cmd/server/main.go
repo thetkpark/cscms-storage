@@ -82,6 +82,7 @@ func main() {
 	app.Post("/api/file", fileHandler.UploadFile)
 
 	app.Static("/", "./client/build")
+	app.Static("/404", "./client/build")
 
 	app.Get("/:token", fileHandler.GetFile)
 

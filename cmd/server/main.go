@@ -20,7 +20,7 @@ import (
 func main() {
 	logger := hclog.Default()
 
-	masterKey, storagePath, sqlitePath, port, storeDuration := getEnv()
+	masterKey, storagePath, sqlitePath, port, maxStoreDuration := getEnv()
 
 	app := fiber.New(fiber.Config{
 		BodyLimit: 150 << 20,
@@ -50,7 +50,7 @@ func main() {
 	if err != nil {
 		log.Fatalln("unable to open sqlite db", err)
 	}
-	gormFileDataStore, err := data.NewGormFileDataStore(logger, db, storeDuration)
+	gormFileDataStore, err := data.NewGormFileDataStore(logger, db, maxStoreDuration)
 	if err != nil {
 		log.Fatalln("unable to run gorm migration", err)
 	}
@@ -63,7 +63,7 @@ func main() {
 	}
 
 	// Create handlers
-	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager)
+	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager, maxStoreDuration)
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
@@ -106,10 +106,10 @@ func getEnv() (string, string, string, string, time.Duration) {
 		port = fmt.Sprintf(":%s", port)
 	}
 
-	storeDuration := os.Getenv("STORE_DURATION") // in days
+	maxStoreDuration := os.Getenv("STORE_DURATION") // in days
 	duration := time.Hour * 24 * 30
-	if len(storeDuration) != 0 {
-		date, err := strconv.Atoi(storeDuration)
+	if len(maxStoreDuration) != 0 {
+		date, err := strconv.Atoi(maxStoreDuration)
 		if err != nil {
 			log.Fatalln("STORE_DURATION is not a valid number")
 		}

@@ -5,7 +5,8 @@ import "time"
 type File struct {
 	ID        string    `gorm:"primaryKey" json:"id"`
 	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time
+	UpdatedAt time.Time `json:"updated_at"`
+	ExpiredAt time.Time `json:"expired_at"`
 	Token     string `gorm:"unique uniqueIndex" json:"token"`
 	Nonce     string `json:"nonce"`
 	Filename  string `json:"filename"`

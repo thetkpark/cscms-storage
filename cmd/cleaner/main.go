@@ -5,7 +5,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"github.com/thetkpark/cscms-temp-storage/service"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
 	"os"
@@ -16,10 +16,13 @@ import (
 func main() {
 	logger := hclog.Default()
 
-	storagePath, sqlitePath, storeDuration := getEnv()
+	storagePath, storeDuration := getEnv()
+	dbHost, dbPort, dbUsername, dbPassword, dbName := getDBEnv()
 	isFailed := false
+
 	// Open data store
-	db, err := gorm.Open(sqlite.Open(sqlitePath), &gorm.Config{})
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbUsername, dbPassword, dbHost, dbPort, dbName)
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 
 	diskStorageManager, err := service.NewDiskStorageManager(logger, storagePath)
 	if err != nil {
@@ -45,9 +48,17 @@ func main() {
 		}
 
 		// Check if not expire
-		if fileInfo.CreatedAt.UTC().Add(storeDuration).After(time.Now().UTC()) {
-			// Not expire -> continue
-			continue
+		if fileInfo.ExpiredAt.IsZero() {
+			// If there is no expired_at -> check with maxStoreDuration
+			if fileInfo.CreatedAt.UTC().Add(storeDuration).After(time.Now().UTC()) {
+				// Not expire -> continue
+				continue
+			}
+		} else {
+			// Check if expired_at is in the future
+			if fileInfo.ExpiredAt.UTC().After(time.Now().UTC()) {
+				continue
+			}
 		}
 
 		// Delete expired file
@@ -67,23 +78,31 @@ func main() {
 	logger.Info(fmt.Sprintf("Delete %d file", deletedCount))
 }
 
-func getEnv() (string, string, time.Duration) {
+func getEnv() (string, time.Duration) {
 	storagePath := os.Getenv("STORAGE_PATH")
-	dbPath := os.Getenv("SQLITE_PATH")
-	if len(storagePath) == 0 || len(dbPath) == 0 {
-		log.Fatalln("SQLITE_PATH STORAGE_PATH env must be defined")
+	if len(storagePath) == 0 {
+		log.Fatalln("STORAGE_PATH env must be defined")
 	}
-
 	// optional env
-	storeDuration := os.Getenv("STORE_DURATION") // in days
+	maxStoreDuration := os.Getenv("STORE_DURATION") // in days
 	duration := time.Hour * 24 * 30
-	if len(storeDuration) != 0 {
-		date, err := strconv.Atoi(storeDuration)
+	if len(maxStoreDuration) != 0 {
+		date, err := strconv.Atoi(maxStoreDuration)
 		if err != nil {
 			log.Fatalln("STORE_DURATION is not a valid number")
 		}
 		duration = time.Hour * 24 * time.Duration(date)
 	}
 
-	return storagePath, dbPath, duration
+	return storagePath, duration
+}
+
+func getDBEnv() (string, string, string, string, string) {
+	username := os.Getenv("DB_USERNAME")
+	password := os.Getenv("DB_PASSWORD")
+	port := os.Getenv("DB_PORT")
+	host := os.Getenv("DB_HOST")
+	dbname := os.Getenv("DB_DATABASE")
+
+	return host, port, username, password, dbname
 }

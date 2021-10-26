@@ -6,7 +6,7 @@ import (
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/handlers"
 	"github.com/thetkpark/cscms-temp-storage/service"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
 	"os"
@@ -20,7 +20,8 @@ import (
 func main() {
 	logger := hclog.Default()
 
-	masterKey, storagePath, sqlitePath, port, maxStoreDuration := getEnv()
+	masterKey, storagePath, port, maxStoreDuration := getEnv()
+	dbHost, dbPort, dbUsername, dbPassword, dbName := getDBEnv()
 
 	app := fiber.New(fiber.Config{
 		BodyLimit: 150 << 20,
@@ -46,7 +47,8 @@ func main() {
 	})
 
 	// Create data store
-	db, err := gorm.Open(sqlite.Open(sqlitePath), &gorm.Config{})
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbUsername, dbPassword, dbHost, dbPort, dbName)
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalln("unable to open sqlite db", err)
 	}
@@ -89,13 +91,12 @@ func main() {
 	}
 }
 
-func getEnv() (string, string, string, string, time.Duration) {
+func getEnv() (string, string, string, time.Duration) {
 	// Required env
 	key := os.Getenv("MASTER_KEY")
 	storagePath := os.Getenv("STORAGE_PATH")
-	dbPath := os.Getenv("SQLITE_PATH")
-	if len(key) == 0 || len(storagePath) == 0 || len(dbPath) == 0 {
-		log.Fatalln("MASTER_KEY, SQLITE_PATH STORAGE_PATH env must be defined")
+	if len(key) == 0 || len(storagePath) == 0 {
+		log.Fatalln("MASTER_KEY and STORAGE_PATH env must be defined")
 	}
 
 	// Optional env
@@ -116,5 +117,15 @@ func getEnv() (string, string, string, string, time.Duration) {
 		duration = time.Hour * 24 * time.Duration(date)
 	}
 
-	return key, storagePath, dbPath, port, duration
+	return key, storagePath, port, duration
+}
+
+func getDBEnv() (string, string, string, string, string) {
+	username := os.Getenv("DB_USERNAME")
+	password := os.Getenv("DB_PASSWORD")
+	port := os.Getenv("DB_PORT")
+	host := os.Getenv("DB_HOST")
+	dbname := os.Getenv("DB_DATABASE")
+
+	return host, port, username, password, dbname
 }

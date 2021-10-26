@@ -68,7 +68,14 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "unable to generate file token", err.Error())
 	}
 	fileToken := c.Query("slug", token)
-	// TODO: Check if slug is available
+	// Check if slug is available
+	existingFile, err := h.fileDataStore.FindByToken(fileToken)
+	if existingFile != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("%s slug is used", fileToken))
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		h.log.Error(err.Error())
+		return fiber.NewError(fiber.StatusInternalServerError, "unable to get existing file token")
+	}
 
 	// Check store duration (in day)
 	storeDuration := h.maxStoreDuration

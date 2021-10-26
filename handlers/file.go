@@ -72,7 +72,9 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 	}
 
 	// Create new fileInfo record in db
-	fileInfo, err := h.fileDataStore.Create(fileId, fileToken, nonce, fileHeader.Filename, uint64(fileHeader.Size))
+	day := 3
+	storeDuration := time.Hour * 24 * time.Duration(day)
+	fileInfo, err := h.fileDataStore.Create(fileId, fileToken, nonce, fileHeader.Filename, uint64(fileHeader.Size), storeDuration)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "unable to save file info to db", err.Error())
 	}
@@ -83,6 +85,7 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 		"file_size":    fileInfo.FileSize,
 		"file_name":    fileInfo.Filename,
 		"created_at":   fileInfo.CreatedAt,
+		"expired_at": 	fileInfo.ExpiredAt,
 		"encrypt_time": encryptFileDuration.String(),
 		"total_time":   time.Since(tStart).String(),
 	})

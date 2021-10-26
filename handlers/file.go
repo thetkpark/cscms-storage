@@ -8,6 +8,7 @@ import (
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/service"
 	"gorm.io/gorm"
+	"strconv"
 	"time"
 )
 
@@ -16,14 +17,16 @@ type FileRoutesHandler struct {
 	encryptionManager service.EncryptionManager
 	fileDataStore     data.FileDataStore
 	storageManager    service.StorageManager
+	maxStoreDuration  time.Duration
 }
 
-func NewFileRoutesHandler(log hclog.Logger, enc service.EncryptionManager, data data.FileDataStore, store service.StorageManager) *FileRoutesHandler {
+func NewFileRoutesHandler(log hclog.Logger, enc service.EncryptionManager, data data.FileDataStore, store service.StorageManager, duration time.Duration) *FileRoutesHandler {
 	return &FileRoutesHandler{
 		log:               log,
 		encryptionManager: enc,
 		fileDataStore:     data,
 		storageManager:    store,
+		maxStoreDuration:  duration,
 	}
 }
 
@@ -60,20 +63,27 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 	}
 
 	// Check slug
-	fileToken := c.Query("slug")
-	if len(fileToken) == 0 {
-		//No slug, Generate file token
-		fileToken, err = service.GenerateFileToken()
+	token, err := service.GenerateFileToken()
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "unable to generate file token", err.Error())
+	}
+	fileToken := c.Query("slug", token)
+	// TODO: Check if slug is available
+
+	// Check store duration (in day)
+	storeDuration := h.maxStoreDuration
+	if dayString := c.Query("duration"); len(dayString) > 0 {
+		day, err := strconv.Atoi(dayString)
 		if err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, "unable to generate file token", err.Error())
+			return fiber.NewError(fiber.StatusBadRequest, "duration must be integer")
 		}
-	} else {
-		// Check if slug is available
+		if float64(day*24) > h.maxStoreDuration.Hours() {
+			return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("duration exceed maximum store duration (%v)", h.maxStoreDuration.Hours()/24))
+		}
+		storeDuration = time.Duration(day) * time.Hour * 24
 	}
 
 	// Create new fileInfo record in db
-	day := 3
-	storeDuration := time.Hour * 24 * time.Duration(day)
 	fileInfo, err := h.fileDataStore.Create(fileId, fileToken, nonce, fileHeader.Filename, uint64(fileHeader.Size), storeDuration)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "unable to save file info to db", err.Error())
@@ -85,7 +95,7 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 		"file_size":    fileInfo.FileSize,
 		"file_name":    fileInfo.Filename,
 		"created_at":   fileInfo.CreatedAt,
-		"expired_at": 	fileInfo.ExpiredAt,
+		"expired_at":   fileInfo.ExpiredAt,
 		"encrypt_time": encryptFileDuration.String(),
 		"total_time":   time.Since(tStart).String(),
 	})

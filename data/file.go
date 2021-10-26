@@ -15,20 +15,18 @@ type FileDataStore interface {
 }
 
 type GormFileDataStore struct {
-	log           hclog.Logger
-	db            *gorm.DB
-	storeDuration time.Duration
+	log hclog.Logger
+	db  *gorm.DB
 }
 
-func NewGormFileDataStore(l hclog.Logger, db *gorm.DB, duration time.Duration) (*GormFileDataStore, error) {
+func NewGormFileDataStore(l hclog.Logger, db *gorm.DB) (*GormFileDataStore, error) {
 	if err := db.AutoMigrate(&model.File{}); err != nil {
 		return nil, err
 	}
 
 	return &GormFileDataStore{
-		log:           l,
-		db:            db,
-		storeDuration: duration,
+		log: l,
+		db:  db,
 	}, nil
 }
 
@@ -65,7 +63,7 @@ func (store *GormFileDataStore) FindByToken(token string) (*model.File, error) {
 
 	var file *model.File
 	for _, v := range files {
-		if v.CreatedAt.UTC().Add(store.storeDuration).After(time.Now().UTC()) {
+		if v.ExpiredAt.UTC().After(time.Now().UTC()) {
 			file = v
 			break
 		}

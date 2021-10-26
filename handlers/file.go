@@ -9,6 +9,7 @@ import (
 	"github.com/thetkpark/cscms-temp-storage/service"
 	"gorm.io/gorm"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -67,7 +68,7 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "unable to generate file token", err.Error())
 	}
-	fileToken := c.Query("slug", token)
+	fileToken := strings.ToLower(c.Query("slug", token))
 	// Check if slug is available
 	existingFile, err := h.fileDataStore.FindByToken(fileToken)
 	if existingFile != nil {
@@ -109,7 +110,7 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 }
 
 func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
-	token := c.Params("token")
+	token := strings.ToLower(c.Params("token"))
 
 	// Find file by token
 	file, err := h.fileDataStore.FindByToken(token)

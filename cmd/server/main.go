@@ -50,7 +50,7 @@ func main() {
 	if err != nil {
 		log.Fatalln("unable to open sqlite db", err)
 	}
-	gormFileDataStore, err := data.NewGormFileDataStore(logger, db)
+	gormFileDataStore, err := data.NewGormFileDataStore(logger, db, maxStoreDuration)
 	if err != nil {
 		log.Fatalln("unable to run gorm migration", err)
 	}

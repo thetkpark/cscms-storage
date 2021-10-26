@@ -22,7 +22,7 @@ func main() {
 
 	masterKey, storagePath, port, maxStoreDuration := getEnv()
 	dbHost, dbPort, dbUsername, dbPassword, dbName := getDBEnv()
-	logger.Debug("DB env", dbHost, dbPort, dbUsername, dbPassword, dbName)
+	logger.Info("DB env", dbHost, dbPort, dbUsername, dbPassword, dbName)
 
 	app := fiber.New(fiber.Config{
 		BodyLimit: 150 << 20,
@@ -50,6 +50,7 @@ func main() {
 	// Create data store
 	//dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbUsername, dbPassword, dbHost, dbPort, dbName)
 	dsn := fmt.Sprintf("%s:%s@tcp(common-mariadb-srv:3306)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbUsername, dbPassword, dbName)
+	logger.Info(dsn)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalln("unable to open sqlite db", err)

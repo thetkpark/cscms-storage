@@ -65,10 +65,6 @@ func (store *GormFileDataStore) FindByToken(token string) (*model.File, error) {
 
 	var file *model.File
 	for _, v := range files {
-		if v.ExpiredAt.IsZero() && v.CreatedAt.UTC().Add(store.maxStoreDuration).After(time.Now().UTC()) {
-			file = v
-			break
-		}
 		if v.ExpiredAt.UTC().After(time.Now().UTC()) {
 			file = v
 			break

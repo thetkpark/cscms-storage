@@ -9,14 +9,13 @@ import (
 	"gorm.io/gorm"
 	"log"
 	"os"
-	"strconv"
 	"time"
 )
 
 func main() {
 	logger := hclog.Default()
 
-	storagePath, storeDuration := getEnv()
+	storagePath := getEnv()
 	dbHost, dbPort, dbUsername, dbPassword, dbName := getDBEnv()
 	isFailed := false
 
@@ -47,18 +46,9 @@ func main() {
 			continue
 		}
 
-		// Check if not expire
-		if fileInfo.ExpiredAt.IsZero() {
-			// If there is no expired_at -> check with maxStoreDuration
-			if fileInfo.CreatedAt.UTC().Add(storeDuration).After(time.Now().UTC()) {
-				// Not expire -> continue
-				continue
-			}
-		} else {
-			// Check if expired_at is in the future
-			if fileInfo.ExpiredAt.UTC().After(time.Now().UTC()) {
-				continue
-			}
+		// Check if expired_at is in the future
+		if fileInfo.ExpiredAt.UTC().After(time.Now().UTC()) {
+			continue
 		}
 
 		// Delete expired file
@@ -78,23 +68,13 @@ func main() {
 	logger.Info(fmt.Sprintf("Delete %d file", deletedCount))
 }
 
-func getEnv() (string, time.Duration) {
+func getEnv() string {
 	storagePath := os.Getenv("STORAGE_PATH")
 	if len(storagePath) == 0 {
 		log.Fatalln("STORAGE_PATH env must be defined")
 	}
-	// optional env
-	maxStoreDuration := os.Getenv("STORE_DURATION") // in days
-	duration := time.Hour * 24 * 30
-	if len(maxStoreDuration) != 0 {
-		date, err := strconv.Atoi(maxStoreDuration)
-		if err != nil {
-			log.Fatalln("STORE_DURATION is not a valid number")
-		}
-		duration = time.Hour * 24 * time.Duration(date)
-	}
 
-	return storagePath, duration
+	return storagePath
 }
 
 func getDBEnv() (string, string, string, string, string) {

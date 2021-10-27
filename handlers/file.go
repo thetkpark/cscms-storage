@@ -35,47 +35,46 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 	tStart := time.Now()
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "unable to get file from form-data", err.Error())
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to get file from form-data", err)
 	}
 
 	// Create new fileId
 	fileId, err := service.GenerateFileId()
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "unable to create file id", err.Error())
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to create file id", err)
 	}
 
 	// Open multipart form header
 	file, err := fileHeader.Open()
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "unable to open file", err.Error())
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to open file", err)
 	}
 
 	// Encrypt the file
 	tEncrypt := time.Now()
 	encrypted, nonce, err := h.encryptionManager.Encrypt(file)
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "unable encrypt the file", err.Error())
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable encrypt the file", err)
 	}
 	encryptFileDuration := time.Now().Sub(tEncrypt)
 
 	// Write encrypted file to disk
 	if err := h.storageManager.WriteToNewFile(fileId, encrypted); err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "unable to write encrypted data to file", err.Error())
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to write encrypted data to file", err)
 	}
 
 	// Check slug
 	token, err := service.GenerateFileToken()
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "unable to generate file token", err.Error())
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to generate file token", err)
 	}
 	fileToken := strings.ToLower(c.Query("slug", token))
 	// Check if slug is available
 	existingFile, err := h.fileDataStore.FindByToken(fileToken)
 	if existingFile != nil {
-		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("%s slug is used", fileToken))
+		return NewHTTPError(h.log, fiber.StatusBadRequest, fmt.Sprintf("%s slug is used", fileToken), nil)
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		h.log.Error(err.Error())
-		return fiber.NewError(fiber.StatusInternalServerError, "unable to get existing file token")
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to get existing file token", err)
 	}
 
 	// Check store duration (in day)
@@ -86,7 +85,7 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 			return fiber.NewError(fiber.StatusBadRequest, "duration must be integer")
 		}
 		if float64(day*24) > h.maxStoreDuration.Hours() {
-			return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("duration exceed maximum store duration (%v)", h.maxStoreDuration.Hours()/24))
+			return NewHTTPError(h.log, fiber.StatusBadRequest, fmt.Sprintf("duration exceed maximum store duration (%v)", h.maxStoreDuration.Hours()/24), nil)
 		}
 		storeDuration = time.Duration(day) * time.Hour * 24
 	}
@@ -94,7 +93,7 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 	// Create new fileInfo record in db
 	fileInfo, err := h.fileDataStore.Create(fileId, fileToken, nonce, fileHeader.Filename, uint64(fileHeader.Size), storeDuration)
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "unable to save file info to db", err.Error())
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to save file info to db", err)
 	}
 
 	return c.JSON(fiber.Map{
@@ -118,7 +117,7 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return c.Redirect(c.BaseURL())
 		}
-		return fiber.NewError(fiber.StatusInternalServerError, "unable to get file query", err.Error())
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to get file query", err)
 	}
 
 	// Check if file still exist on storage
@@ -127,25 +126,25 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 			// File is not exist anymore
 			return c.Redirect(c.BaseURL())
 		}
-		return fiber.NewError(fiber.StatusInternalServerError, "unable to check if file exist", err.Error())
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to check if file exist", err)
 	}
 
 	// Get encrypted file from storage manager
 	encryptedFile, err := h.storageManager.OpenFile(file.ID)
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "unable to open encrypted file", err.Error())
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to open encrypted file", err)
 	}
 
 	// Decrypt file
 	err = h.encryptionManager.Decrypt(encryptedFile, file.Nonce, c)
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "unable to decrypt", err.Error())
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to decrypt", err)
 	}
 
 	// Increase visited count
 	err = h.fileDataStore.IncreaseVisited(file.ID)
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "unable to increase count", err.Error())
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to increase count", err)
 	}
 
 	c.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, file.Filename))

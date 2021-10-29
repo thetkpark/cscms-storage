@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import FormData from 'form-data'
 import ReactGA from 'react-ga'
-import { Form, TextField, Button, Text, Flex } from '@adobe/react-spectrum'
+import { TextField, Button, Text, Slider } from '@adobe/react-spectrum'
 import UploadIcon from '@spectrum-icons/workflow/UploadToCloudOutline'
 import Dropzone from './Dropzone'
 import styles from './App.module.css'
@@ -16,6 +16,7 @@ function App() {
 	const [error, setError] = useState('')
 	const [selectedFilename, setSelectedFilename] = useState('')
 	const [showModal, setShowModal] = useState(false)
+	const [storeDuration, setStoreDuration] = useState(7)
 
 	useEffect(() => {
 		ReactGA.initialize('G-S7NPY62JTS')
@@ -27,7 +28,6 @@ function App() {
 			setError('')
 			setSelectedFile(acceptedFiles[0])
 			setSelectedFilename(acceptedFiles[0].name)
-			
 		} else {
 			if (rejectedFiles[0].errors[0].code === 'too-many-files') {
 				setError('Too many files. You can only upload one file at a time')
@@ -49,7 +49,7 @@ function App() {
 				)
 				setProgress(uploadPercent)
 			},
-			params: { slug }
+			params: { slug, duration: storeDuration }
 		})
 		setFileData(res.data)
 		setShowModal(true)
@@ -82,27 +82,34 @@ function App() {
 				/>
 				<div className={styles.FormContainer}>
 					<form className={styles.Form} onSubmit={handleSubmission}>
-							<TextField
-								label="Custom slug for accessing the file (Optional)"
-								placeholder="Slug"
-								value={slug}
-								onChange={e => setSlug(e)}
-								width="300px"
-								type="text"
-								inputMode="text"
-							/>
-							<Button variant="primary"  type="submit">
-								<UploadIcon />
-								<Text>Upload</Text>
-							</Button>
+						<TextField
+							label="Custom slug for accessing the file (Optional)"
+							placeholder="Slug"
+							value={slug}
+							onChange={e => setSlug(e)}
+							width="300px"
+							type="text"
+							inputMode="text"
+						/>
+						<Slider
+							label="Store Duration (Days)"
+							value={storeDuration}
+							onChange={setStoreDuration}
+							minValue={1}
+							maxValue={30}
+						/>
+						<Button variant="primary" type="submit">
+							<UploadIcon />
+							<Text>Upload</Text>
+						</Button>
 					</form>
 				</div>
+				<FileDataModal
+					show={showModal}
+					closeDialog={closeDialogAndReset}
+					fileData={fileData}
+				/>
 			</div>
-			<FileDataModal
-				show={showModal}
-				closeDialog={closeDialogAndReset}
-				fileData={fileData}
-			/>
 		</div>
 	)
 }

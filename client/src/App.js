@@ -4,9 +4,9 @@ import FormData from 'form-data'
 import ReactGA from 'react-ga'
 import { TextField, Button, Text, Slider } from '@adobe/react-spectrum'
 import UploadIcon from '@spectrum-icons/workflow/UploadToCloudOutline'
-import Dropzone from './Dropzone'
-import styles from './App.module.css'
-import FileDataModal from './Modal'
+import Dropzone from './components/Dropzone'
+import styles from './styles/App.module.css'
+import FileDataModal from './components/Modal'
 
 function App() {
 	const [progress, setProgress] = useState(-1)

@@ -12,7 +12,7 @@ import {
 	Flex,
 	Button
 } from '@adobe/react-spectrum'
-import { formatBytes } from './utils/formatBytes'
+import { formatBytes } from '../utils/formatBytes'
 dayjs.extend(localizedFormat)
 
 const FileDataModal = ({ show, fileData, closeDialog }) => {

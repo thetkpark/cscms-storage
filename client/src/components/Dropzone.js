@@ -1,9 +1,8 @@
 import React from 'react'
 import { useDropzone } from 'react-dropzone'
 import { ProgressBar, Heading, Content } from '@adobe/react-spectrum'
-import Upload from '@spectrum-icons/illustrations/Upload'
 import FileShareIcon from '@spectrum-icons/workflow/FileShare'
-import styles from './Dropzone.module.css'
+import styles from '../styles/Dropzone.module.css'
 
 const Dropzone = ({ onDrop, selectedFilename, progress, error }) => {
 	const { getRootProps, getInputProps, isDragActive } = useDropzone({

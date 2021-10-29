@@ -57,6 +57,7 @@ const Dropzone = ({ onDrop, selectedFilename, progress, error }) => {
 				{/* <Upload /> */}
 				<Heading>Drag and Drop your file</Heading>
 				<Content>{renderText()}</Content>
+				<Content>The maximum file size is 100MB</Content>
 				{progress !== -1 ? renderProgressBar() : null}
 			</div>
 		</div>

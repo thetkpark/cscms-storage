@@ -134,7 +134,7 @@ func NewAzureImageStorageManager(l hclog.Logger, connectionString string, contai
 	}, nil
 }
 
-func (a AzureImageStorageManager) UploadImage(fileName string, file io.ReadSeekCloser) error {
+func (a *AzureImageStorageManager) UploadImage(fileName string, file io.ReadSeekCloser) error {
 	bbClient := a.containerClient.NewBlockBlobClient(fileName)
 	_, err := bbClient.UploadStreamToBlockBlob(context.Background(), file, azblob.UploadStreamToBlockBlobOptions{})
 	return err

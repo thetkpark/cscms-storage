@@ -20,7 +20,7 @@ import (
 func main() {
 	logger := hclog.Default()
 
-	masterKey, storagePath, port, maxStoreDuration := getEnv()
+	masterKey, storagePath, port, maxStoreDuration, azStorageConnString, azStorageConName := getEnv()
 	dbHost, dbPort, dbUsername, dbPassword, dbName := getDBEnv()
 
 	app := fiber.New(fiber.Config{
@@ -60,12 +60,15 @@ func main() {
 	// Create service managers for handler
 	sioEncryptionManager := service.NewSIOEncryptionManager(logger, masterKey)
 	diskStorageManager, err := service.NewDiskStorageManager(logger, storagePath)
+	imageStorageManager, err := service.NewAzureImageStorageManager(logger, azStorageConnString, azStorageConName)
+
 	if err != nil {
 		log.Fatalln("unable to create disk storage manager")
 	}
 
 	// Create handlers
 	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager, maxStoreDuration)
+	imageHandler := handlers.NewImageRouteHandler(logger, imageStorageManager)
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
@@ -81,6 +84,8 @@ func main() {
 
 	app.Post("/api/file", fileHandler.UploadFile)
 
+	app.Post("/api/image", imageHandler.UploadImage)
+
 	app.Static("/", "./client/build")
 	app.Static("/404", "./client/build")
 
@@ -92,12 +97,17 @@ func main() {
 	}
 }
 
-func getEnv() (string, string, string, time.Duration) {
+func getEnv() (string, string, string, time.Duration, string, string) {
 	// Required env
 	key := os.Getenv("MASTER_KEY")
 	storagePath := os.Getenv("STORAGE_PATH")
 	if len(key) == 0 || len(storagePath) == 0 {
 		log.Fatalln("MASTER_KEY and STORAGE_PATH env must be defined")
+	}
+	azStorageConnectionString := os.Getenv("AZSTORAGE_CONNECTION_STRING")
+	azStorageContainerName := os.Getenv("AZSTORAGE_CONTAINER_NAME")
+	if len(azStorageConnectionString) == 0 || len(azStorageContainerName) == 0 {
+		log.Fatalln("AZSTORAGE_CONNECTION_STRING and AZSTORAGE_CONTAINER_NAME are required")
 	}
 
 	// Optional env
@@ -118,7 +128,7 @@ func getEnv() (string, string, string, time.Duration) {
 		duration = time.Hour * 24 * time.Duration(date)
 	}
 
-	return key, storagePath, port, duration
+	return key, storagePath, port, duration, azStorageConnectionString, azStorageContainerName
 }
 
 func getDBEnv() (string, string, string, string, string) {

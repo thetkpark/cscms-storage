@@ -5,17 +5,13 @@ import (
 )
 
 func GenerateFileToken() (string, error) {
-	token, err := gonanoid.Generate("0123456789abcdefghijklmnopqrstuvwxyz", 6)
-	if err != nil {
-		return "", err
-	}
-	return token, nil
+	return gonanoid.Generate("0123456789abcdefghijklmnopqrstuvwxyz", 6)
 }
 
 func GenerateFileId() (string, error) {
-	key, err := gonanoid.New(30)
-	if err != nil {
-		return "", err
-	}
-	return key, nil
+	return gonanoid.New(30)
+}
+
+func GenerateImageToken() (string, error) {
+	return gonanoid.Generate("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", 20)
 }

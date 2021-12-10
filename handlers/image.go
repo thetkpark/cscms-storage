@@ -4,18 +4,21 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-hclog"
+	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/service"
 	"regexp"
 )
 
 type ImageRouteHandler struct {
 	log               hclog.Logger
+	imageDataStore    data.ImageDataStore
 	imageStoreManager service.ImageStorageManager
 }
 
-func NewImageRouteHandler(log hclog.Logger, store service.ImageStorageManager) *ImageRouteHandler {
+func NewImageRouteHandler(log hclog.Logger, imgDataStore data.ImageDataStore, store service.ImageStorageManager) *ImageRouteHandler {
 	return &ImageRouteHandler{
 		log:               log,
+		imageDataStore:    imgDataStore,
 		imageStoreManager: store,
 	}
 }

@@ -25,20 +25,19 @@ func (j *JwtManager) GenerateUserJWT(userId string) (string, error) {
 }
 
 func (j *JwtManager) ValidateUserJWT(tokenString string) (string, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
 		// Validate the signing algorithm
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return "", fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		// Return the secret key
 		return j.secret, nil
 	})
-
 	if err != nil {
 		return "", err
 	}
 
-	if claims, ok := token.Claims.(jwt.StandardClaims); ok && token.Valid {
+	if claims, ok := token.Claims.(*jwt.StandardClaims); ok && token.Valid {
 		return claims.Subject, nil
 	}
 	return "", fmt.Errorf("claims is not valid")

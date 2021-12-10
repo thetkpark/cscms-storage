@@ -29,8 +29,8 @@ func NewGormUserDataStore(l hclog.Logger, db *gorm.DB) (*GormUserDataStore, erro
 }
 
 func (d *GormUserDataStore) FindById(userId uint) (*model.User, error) {
-	var user *model.User
-	tx := d.db.Where(&model.User{ID: userId}).First(user)
+	var user model.User
+	tx := d.db.Where(&model.User{ID: userId}).First(&user)
 	if tx.Error != nil {
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -38,7 +38,7 @@ func (d *GormUserDataStore) FindById(userId uint) (*model.User, error) {
 		return nil, tx.Error
 	}
 
-	return user, nil
+	return &user, nil
 }
 
 func (d *GormUserDataStore) FindByProviderAndEmail(provider string, email string) (*model.User, error) {

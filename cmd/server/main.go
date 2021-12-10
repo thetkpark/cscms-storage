@@ -75,6 +75,7 @@ func main() {
 	sioEncryptionManager := service.NewSIOEncryptionManager(logger, masterKey)
 	diskStorageManager, err := service.NewDiskStorageManager(logger, storagePath)
 	imageStorageManager, err := service.NewAzureImageStorageManager(logger, azStorageConnString, azStorageConName)
+	jwtManager := service.NewJwtManager("testtest")
 
 	if err != nil {
 		log.Fatalln("unable to create disk storage manager")
@@ -83,7 +84,7 @@ func main() {
 	// Create handlers
 	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager, maxStoreDuration)
 	imageHandler := handlers.NewImageRouteHandler(logger, gormImageDataStore, imageStorageManager)
-	authHandler := handlers.NewAuthRouteHandler(logger, gormUserDataStore)
+	authHandler := handlers.NewAuthRouteHandler(logger, gormUserDataStore, jwtManager)
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",

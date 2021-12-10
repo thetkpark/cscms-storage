@@ -10,6 +10,10 @@ type JwtManager struct {
 	secret []byte
 }
 
+func NewJwtManager(secret string) *JwtManager {
+	return &JwtManager{secret: []byte(secret)}
+}
+
 func (j *JwtManager) GenerateUserJWT(userId string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.StandardClaims{
 		ExpiresAt: time.Now().Add(30 * 24 * time.Hour).Unix(),

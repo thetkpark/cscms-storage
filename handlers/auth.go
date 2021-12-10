@@ -59,11 +59,14 @@ func (a AuthRouteHandler) OauthProviderCallback(c *fiber.Ctx) error {
 	}
 
 	// Create cookie and attach
-	cookie := new(fiber.Cookie)
-	cookie.Name = "token"
-	cookie.Value = token
-	cookie.Expires = time.Now().Add(30 * 24 * time.Hour)
-	c.Cookie(cookie)
+	c.Cookie(&fiber.Cookie{
+		Name:     "token",
+		Value:    token,
+		Expires:  time.Now().Add(30 * 24 * time.Hour),
+		Secure:   false,
+		HTTPOnly: true,
+		SameSite: "lax",
+	})
 
 	// Goth Session
 	//if err := goth_fiber.StoreInSession("userId", strconv.Itoa(int(user.ID)), c); err != nil {
@@ -80,7 +83,6 @@ func (a *AuthRouteHandler) GetUserInfo(c *fiber.Ctx) error {
 		return NewHTTPError(a.log, fiber.StatusUnauthorized, "Token is not present", fmt.Errorf("no token is found"))
 	}
 
-	a.log.Info(token)
 	userIdString, err := a.jwtManager.ValidateUserJWT(token)
 	if err != nil {
 		c.ClearCookie("token")
@@ -104,6 +106,20 @@ func (a *AuthRouteHandler) GetUserInfo(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(user)
+}
+
+func (a *AuthRouteHandler) Logout(c *fiber.Ctx) error {
+	_ = goth_fiber.Logout(c)
+	c.Cookie(&fiber.Cookie{
+		Name:     "token",
+		Expires:  time.Now().Add(-(time.Hour * 24)),
+		Secure:   false,
+		HTTPOnly: true,
+		SameSite: "lax",
+	})
+	return c.JSON(fiber.Map{
+		"success": true,
+	})
 }
 
 func (a *AuthRouteHandler) getUserName(nickname, firstname, name, email string) string {

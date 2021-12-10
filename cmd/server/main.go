@@ -111,7 +111,7 @@ func main() {
 		google.New(ggClientId, ggSecretKey, "http://localhost:5050/auth/google/callback"))
 
 	app.Get("/auth/logout", authHandler.Logout)
-	app.Get("/auth/user", authHandler.GetUserInfo)
+	app.Get("/auth/user", authHandler.ParseUserFromCookie, authHandler.GetUserInfo)
 	app.Get("/auth/:provider", goth_fiber.BeginAuthHandler)
 	app.Get("/auth/:provider/callback", authHandler.OauthProviderCallback)
 

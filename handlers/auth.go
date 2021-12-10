@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-hclog"
@@ -78,48 +79,44 @@ func (a AuthRouteHandler) OauthProviderCallback(c *fiber.Ctx) error {
 }
 
 func (a *AuthRouteHandler) GetUserInfo(c *fiber.Ctx) error {
+	user := c.UserContext().Value("user")
+	if user == nil {
+		return NewHTTPError(a.log, fiber.StatusUnauthorized, "Unauthorized", fmt.Errorf("unauthorized"))
+	}
+	return c.JSON(user)
+}
+
+func (a *AuthRouteHandler) Logout(c *fiber.Ctx) error {
+	a.clearCookie(c)
+	return c.SendStatus(fiber.StatusOK)
+}
+
+func (a *AuthRouteHandler) ParseUserFromCookie(c *fiber.Ctx) error {
 	token := c.Cookies("token", "")
 	if len(token) == 0 {
-		return NewHTTPError(a.log, fiber.StatusUnauthorized, "Token is not present", fmt.Errorf("no token is found"))
+		return c.Next()
 	}
 
 	userIdString, err := a.jwtManager.ValidateUserJWT(token)
 	if err != nil {
-		c.ClearCookie("token")
-		a.log.Error(err.Error())
-		return NewHTTPError(a.log, fiber.StatusUnauthorized, "Invalid token", err)
+		a.clearCookie(c)
+		return c.Next()
 	}
 
 	// Get user
 	userIdInt, err := strconv.Atoi(userIdString)
 	if err != nil {
-		c.ClearCookie("token")
+		a.clearCookie(c)
 		return NewHTTPError(a.log, fiber.StatusInternalServerError, "Unable to convert userId string to int", err)
 	}
 	user, err := a.userDataStore.FindById(uint(userIdInt))
-	if err != nil {
-		c.ClearCookie("token")
-		return NewHTTPError(a.log, fiber.StatusInternalServerError, "Unable to find user in db", err)
-	} else if user == nil {
-		c.ClearCookie("token")
-		return NewHTTPError(a.log, fiber.StatusUnauthorized, "User id not found", err)
+	if err != nil || user == nil {
+		a.clearCookie(c)
+		return c.Next()
 	}
 
-	return c.JSON(user)
-}
-
-func (a *AuthRouteHandler) Logout(c *fiber.Ctx) error {
-	_ = goth_fiber.Logout(c)
-	c.Cookie(&fiber.Cookie{
-		Name:     "token",
-		Expires:  time.Now().Add(-(time.Hour * 24)),
-		Secure:   false,
-		HTTPOnly: true,
-		SameSite: "lax",
-	})
-	return c.JSON(fiber.Map{
-		"success": true,
-	})
+	c.SetUserContext(context.WithValue(c.UserContext(), "user", user))
+	return c.Next()
 }
 
 func (a *AuthRouteHandler) getUserName(nickname, firstname, name, email string) string {
@@ -136,4 +133,15 @@ func (a *AuthRouteHandler) getUserName(nickname, firstname, name, email string) 
 	emailRegex := regexp.MustCompile("(.+)@.+")
 	subMatch := emailRegex.FindStringSubmatch(email)
 	return subMatch[1]
+}
+
+func (a *AuthRouteHandler) clearCookie(c *fiber.Ctx) {
+	_ = goth_fiber.Logout(c)
+	c.Cookie(&fiber.Cookie{
+		Name:     "token",
+		Expires:  time.Now().Add(-(time.Hour * 24)),
+		Secure:   false,
+		HTTPOnly: true,
+		SameSite: "lax",
+	})
 }

@@ -1,0 +1,24 @@
+.SideBar {
+	background: #fff;
+	border-radius: 50px;
+	position: absolute;
+	width: 72px;
+	height: calc(100vh - 400px);
+	top: 0;
+	left: -98px;
+	padding: 200px 0px 200px 108px;
+}
+.SideBar__item {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-radius: 25px;
+	width: 75px;
+	height: 80px;
+	padding-right: 2rem;
+	margin-left: .25rem;
+	cursor: pointer;
+}
+.SideBar__item.active {
+	background: #F5EBF9;
+}

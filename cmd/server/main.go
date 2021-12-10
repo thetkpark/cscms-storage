@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/hashicorp/go-hclog"
+	"github.com/markbates/goth"
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/handlers"
 	"github.com/thetkpark/cscms-temp-storage/service"
@@ -15,6 +16,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	//"github.com/markbates/goth"
+	"github.com/markbates/goth/providers/github"
+	"github.com/markbates/goth/providers/google"
+	"github.com/shareed2k/goth_fiber"
 )
 
 func main() {
@@ -22,6 +27,7 @@ func main() {
 
 	masterKey, storagePath, port, maxStoreDuration, azStorageConnString, azStorageConName := getEnv()
 	dbHost, dbPort, dbUsername, dbPassword, dbName := getDBEnv()
+	ghClientId, ghSecretKey, ggClientId, ggSecretKey := getOauthEnv()
 
 	app := fiber.New(fiber.Config{
 		BodyLimit: 150 << 20,
@@ -54,7 +60,15 @@ func main() {
 	}
 	gormFileDataStore, err := data.NewGormFileDataStore(logger, db, maxStoreDuration)
 	if err != nil {
-		log.Fatalln("unable to run gorm migration", err)
+		log.Fatalln("unable to run gorm migration on file table", err)
+	}
+	gormImageDataStore, err := data.NewGormImageDataStore(logger, db)
+	if err != nil {
+		log.Fatalln("unable to run gorm migration on image table", err)
+	}
+	gormUserDataStore, err := data.NewGormUserDataStore(logger, db)
+	if err != nil {
+		log.Fatalln("unable to run gorm migration on user table", err)
 	}
 
 	// Create service managers for handler
@@ -68,7 +82,8 @@ func main() {
 
 	// Create handlers
 	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager, maxStoreDuration)
-	imageHandler := handlers.NewImageRouteHandler(logger, imageStorageManager)
+	imageHandler := handlers.NewImageRouteHandler(logger, gormImageDataStore, imageStorageManager)
+	authHandler := handlers.NewAuthRouteHandler(logger, gormUserDataStore)
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
@@ -88,6 +103,14 @@ func main() {
 
 	app.Static("/", "./client/build")
 	app.Static("/404", "./client/build")
+
+	// Try auth
+	goth.UseProviders(
+		github.New(ghClientId, ghSecretKey, "http://localhost:5050/auth/github/callback"),
+		google.New(ggClientId, ggSecretKey, "http://localhost:5050/auth/google/callback"))
+
+	app.Get("/auth/:provider", goth_fiber.BeginAuthHandler)
+	app.Get("/auth/:provider/callback", authHandler.OauthProviderCallback)
 
 	app.Get("/:token", fileHandler.GetFile)
 
@@ -139,4 +162,13 @@ func getDBEnv() (string, string, string, string, string) {
 	dbname := os.Getenv("DB_DATABASE")
 
 	return host, port, username, password, dbname
+}
+
+func getOauthEnv() (string, string, string, string) {
+	ghClientId := os.Getenv("GITHUB_OAUTH_CLIENT_ID")
+	ghSecretKey := os.Getenv("GITHUB_OAUTH_SECRET_KEY")
+	ggClientId := os.Getenv("GOOGLE_OAUTH_CLIENT_ID")
+	ggSecretKey := os.Getenv("GOOGLE_OAUTH_SECRET_KEY")
+
+	return ghClientId, ghSecretKey, ggClientId, ggSecretKey
 }

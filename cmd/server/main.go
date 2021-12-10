@@ -74,12 +74,14 @@ func main() {
 	// Create service managers for handler
 	sioEncryptionManager := service.NewSIOEncryptionManager(logger, masterKey)
 	diskStorageManager, err := service.NewDiskStorageManager(logger, storagePath)
-	imageStorageManager, err := service.NewAzureImageStorageManager(logger, azStorageConnString, azStorageConName)
-	jwtManager := service.NewJwtManager("testtest")
-
 	if err != nil {
 		log.Fatalln("unable to create disk storage manager")
 	}
+	imageStorageManager, err := service.NewAzureImageStorageManager(logger, azStorageConnString, azStorageConName)
+	if err != nil {
+		log.Fatalln("unable to azure image storage manager")
+	}
+	jwtManager := service.NewJwtManager(os.Getenv("JWT_SECRET"))
 
 	// Create handlers
 	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager, maxStoreDuration)
@@ -97,9 +99,7 @@ func main() {
 			"timestamp": time.Now(),
 		})
 	})
-
 	app.Post("/api/file", fileHandler.UploadFile)
-
 	app.Post("/api/image", imageHandler.UploadImage)
 
 	app.Static("/", "./client/build")

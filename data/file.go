@@ -9,7 +9,7 @@ import (
 )
 
 type FileDataStore interface {
-	Create(id, token, nonce, filename string, filesize uint64, storeDuration time.Duration) (*model.File, error)
+	Save(file *model.File) (*model.File, error)
 	FindByToken(token string) (*model.File, error)
 	IncreaseVisited(id string) error
 }
@@ -32,19 +32,7 @@ func NewGormFileDataStore(l hclog.Logger, db *gorm.DB, duration time.Duration) (
 	}, nil
 }
 
-func (store *GormFileDataStore) Create(id, token, nonce, filename string, filesize uint64, storeDuration time.Duration) (*model.File, error) {
-	file := &model.File{
-		ID:        id,
-		Token:     token,
-		Nonce:     nonce,
-		Filename:  filename,
-		FileSize:  filesize,
-		CreatedAt: time.Now().UTC(),
-		UpdatedAt: time.Now().UTC(),
-		ExpiredAt: time.Now().UTC().Add(storeDuration),
-		Visited:   0,
-	}
-
+func (store *GormFileDataStore) Save(file *model.File) (*model.File, error) {
 	tx := store.db.Create(file)
 	if tx.Error != nil {
 		store.log.Error("unable to create new file data in db", tx.Error)

@@ -99,7 +99,7 @@ func main() {
 			"timestamp": time.Now(),
 		})
 	})
-	app.Post("/api/file", fileHandler.UploadFile)
+	app.Post("/api/file", authHandler.ParseUserFromCookie, fileHandler.UploadFile)
 	app.Post("/api/image", imageHandler.UploadImage)
 
 	app.Static("/", "./client/build")

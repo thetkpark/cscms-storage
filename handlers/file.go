@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-hclog"
 	"github.com/thetkpark/cscms-temp-storage/data"
+	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"github.com/thetkpark/cscms-temp-storage/service"
 	"gorm.io/gorm"
 	"strconv"
@@ -91,7 +92,30 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 	}
 
 	// Create new fileInfo record in db
-	fileInfo, err := h.fileDataStore.Create(fileId, fileToken, nonce, fileHeader.Filename, uint64(fileHeader.Size), storeDuration)
+	fileInfo := &model.File{
+		ID:        fileId,
+		Token:     fileToken,
+		Nonce:     nonce,
+		Filename:  fileHeader.Filename,
+		FileSize:  uint64(fileHeader.Size),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		ExpiredAt: time.Now().UTC().Add(storeDuration),
+		Visited:   0,
+		UserID:    0,
+	}
+
+	// Get userId if exist
+	user := c.UserContext().Value("user")
+	if user != nil {
+		userModel, ok := user.(*model.User)
+		if !ok {
+			return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to parse to user model", fmt.Errorf("user model convert error"))
+		}
+		fileInfo.UserID = userModel.ID
+	}
+
+	_, err = h.fileDataStore.Save(fileInfo)
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to save file info to db", err)
 	}

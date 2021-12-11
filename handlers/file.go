@@ -115,7 +115,7 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 		fileInfo.UserID = userModel.ID
 	}
 
-	_, err = h.fileDataStore.Save(fileInfo)
+	err = h.fileDataStore.Create(fileInfo)
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to save file info to db", err)
 	}

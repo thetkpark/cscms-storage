@@ -9,7 +9,7 @@ import (
 )
 
 type FileDataStore interface {
-	Save(file *model.File) (*model.File, error)
+	Create(file *model.File) error
 	FindByToken(token string) (*model.File, error)
 	IncreaseVisited(id string) error
 }
@@ -32,13 +32,9 @@ func NewGormFileDataStore(l hclog.Logger, db *gorm.DB, duration time.Duration) (
 	}, nil
 }
 
-func (store *GormFileDataStore) Save(file *model.File) (*model.File, error) {
+func (store *GormFileDataStore) Create(file *model.File) error {
 	tx := store.db.Create(file)
-	if tx.Error != nil {
-		store.log.Error("unable to create new file data in db", tx.Error)
-		return nil, tx.Error
-	}
-	return file, nil
+	return tx.Error
 }
 
 func (store *GormFileDataStore) FindByToken(token string) (*model.File, error) {

@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 import SocialAuthButton from './SocialAuthButton'
-
+import styles from '../../styles/auth/AuthForm.module.css'
 const AuthForm = ({ mode, changeMode }) => {
 	const renderTitle = () => {
 		switch (mode) {
@@ -38,10 +38,8 @@ const AuthForm = ({ mode, changeMode }) => {
 	}
 	return (
 		<Fragment>
-			<div style={{ padding: '3rem 8rem', width: '360px' }}>
-				<h2 style={{ textAlign: 'center', marginBottom: '64px', fontSize: '2.25rem' }}>
-					{renderTitle()}
-				</h2>
+			<div className={styles.AuthFormWrapper}>
+				<h2 className={styles.TitleText}>{renderTitle()}</h2>
 				<SocialAuthButton mode={mode} platform="Google" />
 				<SocialAuthButton mode={mode} platform="Github" />
 				<div style={{ textAlign: 'center', marginTop: '64px' }}>
@@ -50,13 +48,7 @@ const AuthForm = ({ mode, changeMode }) => {
 					updates.
 				</div>
 			</div>
-			<div
-				style={{
-					textAlign: 'center',
-					padding: '3rem',
-					background: '#EBEDF4',
-					color: '#959595'
-				}}
+			<div className={styles.SwitchField}
 			>
 				{renderSwitchText()}
 			</div>

@@ -25,6 +25,8 @@ function App() {
 			case 'logout':
 				setAuth(false)
 				break
+			default:
+				break
 		}
 	}
 

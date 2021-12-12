@@ -42,7 +42,7 @@ const AuthForm = ({ mode, changeMode }) => {
 				<h2 className={styles.TitleText}>{renderTitle()}</h2>
 				<SocialAuthButton mode={mode} platform="Google" />
 				<SocialAuthButton mode={mode} platform="Github" />
-				<div style={{ textAlign: 'center', marginTop: '64px' }}>
+				<div className={styles.Description}>
 					By creating an account, you agree to cscms{' '}
 					<span role="link">Terms of Use, Privacy Policy</span> and to receive news and
 					updates.

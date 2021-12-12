@@ -110,7 +110,7 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 	if user != nil {
 		userModel, ok := user.(*model.User)
 		if !ok {
-			return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to parse to user model", fmt.Errorf("user model convert error"))
+			return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to parse to user model", fmt.Errorf("user model convertion error"))
 		}
 		fileInfo.UserID = userModel.ID
 	}

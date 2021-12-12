@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-hclog"
 	"github.com/shareed2k/goth_fiber"
@@ -83,7 +82,7 @@ func (a AuthRouteHandler) OauthProviderCallback(c *fiber.Ctx) error {
 func (a *AuthRouteHandler) GetUserInfo(c *fiber.Ctx) error {
 	user := c.UserContext().Value("user")
 	if user == nil {
-		return NewHTTPError(a.log, fiber.StatusUnauthorized, "Unauthorized", fmt.Errorf("unauthorized"))
+		return NewHTTPError(a.log, fiber.StatusUnauthorized, "Unauthorized", nil)
 	}
 	return c.JSON(user)
 }
@@ -124,7 +123,7 @@ func (a *AuthRouteHandler) ParseUserFromCookie(c *fiber.Ctx) error {
 func (a *AuthRouteHandler) AuthenticatedOnly(c *fiber.Ctx) error {
 	user := c.UserContext().Value("user")
 	if user == nil {
-		return NewHTTPError(a.log, fiber.StatusUnauthorized, "Unauthenticated", fmt.Errorf("unauthenticated"))
+		return NewHTTPError(a.log, fiber.StatusUnauthorized, "Unauthenticated", nil)
 	}
 	return c.Next()
 }

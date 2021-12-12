@@ -1,6 +1,7 @@
 import Icon from './Icon'
 import { Fragment } from 'react'
 import styles from '../styles/Navbar.module.css'
+import Button from './Button'
 const Navbar = ({ auth, handleAction }) => {
 	return (
 		<Fragment>
@@ -13,8 +14,8 @@ const Navbar = ({ auth, handleAction }) => {
 					</Fragment>
 				) : (
 					<Fragment>
-						<div onClick={() => handleAction('login')}>Login</div>
-						<div onClick={() => handleAction('register')}>Register</div>
+						<Button color="black" bgColor="transparent" action={() => handleAction('login')}>Login</Button>
+						<Button color="white" bgColor="#6868AC" action={() => handleAction('register')}>Register</Button>
 					</Fragment>
 				)}
 			</nav>

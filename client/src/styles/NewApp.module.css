@@ -1,6 +1,8 @@
 .App {
-	font-family: 'Poppins', sans-serif;
-	background: linear-gradient(90deg, #F7EAF7, #E9EEFF);
+	background: linear-gradient(90deg, #f7eaf7, #e9eeff);
 	width: 100vw;
 	height: 100vh;
+}
+* {
+	font-family: 'Poppins', sans-serif;
 }

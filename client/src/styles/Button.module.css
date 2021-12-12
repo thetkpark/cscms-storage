@@ -1,0 +1,14 @@
+.Btn {
+    width:100px;
+    height: 40px;
+    border: 1px solid #C4C4C4;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    line-height: 21;
+    font-size: 1rem;
+    margin: .5rem;
+    cursor: pointer;
+}

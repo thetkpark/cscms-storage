@@ -119,6 +119,14 @@ func (a *AuthRouteHandler) ParseUserFromCookie(c *fiber.Ctx) error {
 	return c.Next()
 }
 
+func (a *AuthRouteHandler) AuthenticatedOnly(c *fiber.Ctx) error {
+	user := c.UserContext().Value("user")
+	if user == nil {
+		return NewHTTPError(a.log, fiber.StatusUnauthorized, "Unauthenticated", fmt.Errorf("unauthenticated"))
+	}
+	return c.Next()
+}
+
 func (a *AuthRouteHandler) getUserName(nickname, firstname, name, email string) string {
 	if len(nickname) != 0 {
 		return nickname

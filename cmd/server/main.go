@@ -27,7 +27,7 @@ func main() {
 
 	masterKey, storagePath, port, maxStoreDuration, azStorageConnString, azStorageConName := getEnv()
 	dbHost, dbPort, dbUsername, dbPassword, dbName := getDBEnv()
-	ghClientId, ghSecretKey, ggClientId, ggSecretKey := getOauthEnv()
+	entrypoint, ghClientId, ghSecretKey, ggClientId, ggSecretKey := getOauthEnv()
 
 	app := fiber.New(fiber.Config{
 		BodyLimit: 150 << 20,
@@ -86,7 +86,7 @@ func main() {
 	// Create handlers
 	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager, maxStoreDuration)
 	imageHandler := handlers.NewImageRouteHandler(logger, gormImageDataStore, imageStorageManager)
-	authHandler := handlers.NewAuthRouteHandler(logger, gormUserDataStore, jwtManager)
+	authHandler := handlers.NewAuthRouteHandler(logger, gormUserDataStore, jwtManager, entrypoint)
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
@@ -110,8 +110,8 @@ func main() {
 
 	// Try auth
 	goth.UseProviders(
-		github.New(ghClientId, ghSecretKey, "http://localhost:5050/auth/github/callback"),
-		google.New(ggClientId, ggSecretKey, "http://localhost:5050/auth/google/callback"))
+		github.New(ghClientId, ghSecretKey, fmt.Sprintf("%s/auth/github/callback", entrypoint)),
+		google.New(ggClientId, ggSecretKey, fmt.Sprintf("%s/auth/google/callback", entrypoint)))
 
 	app.Get("/auth/logout", authHandler.Logout)
 	app.Get("/auth/user", authHandler.ParseUserFromCookie, authHandler.GetUserInfo)
@@ -170,11 +170,12 @@ func getDBEnv() (string, string, string, string, string) {
 	return host, port, username, password, dbname
 }
 
-func getOauthEnv() (string, string, string, string) {
+func getOauthEnv() (string, string, string, string, string) {
+	entrypoint := os.Getenv("ENTRYPOINT")
 	ghClientId := os.Getenv("GITHUB_OAUTH_CLIENT_ID")
 	ghSecretKey := os.Getenv("GITHUB_OAUTH_SECRET_KEY")
 	ggClientId := os.Getenv("GOOGLE_OAUTH_CLIENT_ID")
 	ggSecretKey := os.Getenv("GOOGLE_OAUTH_SECRET_KEY")
 
-	return ghClientId, ghSecretKey, ggClientId, ggSecretKey
+	return entrypoint, ghClientId, ghSecretKey, ggClientId, ggSecretKey
 }

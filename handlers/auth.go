@@ -18,13 +18,15 @@ type AuthRouteHandler struct {
 	log           hclog.Logger
 	userDataStore data.UserDataStore
 	jwtManager    *service.JwtManager
+	entrypoint    string
 }
 
-func NewAuthRouteHandler(l hclog.Logger, userDataStore data.UserDataStore, jwtManager *service.JwtManager) *AuthRouteHandler {
+func NewAuthRouteHandler(l hclog.Logger, userDataStore data.UserDataStore, jwtManager *service.JwtManager, entry string) *AuthRouteHandler {
 	return &AuthRouteHandler{
 		log:           l,
 		userDataStore: userDataStore,
 		jwtManager:    jwtManager,
+		entrypoint:    entry,
 	}
 }
 
@@ -32,14 +34,14 @@ func (a AuthRouteHandler) OauthProviderCallback(c *fiber.Ctx) error {
 	gothUser, err := goth_fiber.CompleteUserAuth(c)
 	if err != nil {
 		a.log.Error("unable to complete auth\n" + err.Error())
-		return c.Redirect("http://localhost:5050")
+		return c.Redirect(a.entrypoint)
 	}
 
 	// Check existing user
 	user, err := a.userDataStore.FindByProviderAndEmail(gothUser.Provider, gothUser.Email)
 	if err != nil {
 		a.log.Error("unable to find existing user\n" + err.Error())
-		return c.Redirect("http://localhost:5050")
+		return c.Redirect(a.entrypoint)
 	}
 
 	if user == nil {
@@ -48,7 +50,7 @@ func (a AuthRouteHandler) OauthProviderCallback(c *fiber.Ctx) error {
 		user, err = a.userDataStore.Create(gothUser.Email, username, gothUser.Provider, gothUser.AvatarURL)
 		if err != nil {
 			a.log.Error("unable to create user\n" + err.Error())
-			return c.Redirect("http://localhost:5050")
+			return c.Redirect(a.entrypoint)
 		}
 	}
 
@@ -56,7 +58,7 @@ func (a AuthRouteHandler) OauthProviderCallback(c *fiber.Ctx) error {
 	token, err := a.jwtManager.GenerateUserJWT(strconv.Itoa(int(user.ID)))
 	if err != nil {
 		a.log.Error("unable to generate JWT\n" + err.Error())
-		return c.Redirect("http://localhost:5050")
+		return c.Redirect(a.entrypoint)
 	}
 
 	// Create cookie and attach
@@ -75,7 +77,7 @@ func (a AuthRouteHandler) OauthProviderCallback(c *fiber.Ctx) error {
 	//	return c.Redirect("http://localhost:5050")
 	//}
 
-	return c.Redirect("http://localhost:5050")
+	return c.Redirect(a.entrypoint)
 }
 
 func (a *AuthRouteHandler) GetUserInfo(c *fiber.Ctx) error {

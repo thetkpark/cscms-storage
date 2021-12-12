@@ -35,7 +35,7 @@ function App() {
 				<Sidebar currentRoute={route} handleChangeRoute={route => setRoute(route)} />
 				{dialog ? (
 					<Dialog open={dialog !== null} onClose={() => setDialog(null)}>
-						<AuthForm mode={dialog} />
+						<AuthForm mode={dialog} changeMode={mode => setDialog(mode)} />
 					</Dialog>
 				) : null}
 			</div>

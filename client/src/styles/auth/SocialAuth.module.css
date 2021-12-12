@@ -1,0 +1,28 @@
+.SocialBtn {
+    padding: .75rem 2.5rem;
+    margin: 1.5rem .5rem;
+    font-weight: 500;
+    font-size: 1rem;
+    line-height: 27px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    cursor: pointer;
+}
+.SocialBtn svg {
+    margin-right: 1rem;
+}
+
+.Google {
+    border: 1px solid #C4C4C4;
+    background: #fff;
+    color: rgba(0,0,0,0.54)
+}
+
+.Github {
+    border: none;
+    color:#fff;
+    background: linear-gradient(180deg, #737373 -15%, #040404 97.75%);
+}

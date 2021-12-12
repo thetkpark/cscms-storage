@@ -1,7 +1,7 @@
-import Icon from './Icon'
+import Icon from '../util/Icon'
 import { Fragment } from 'react'
-import styles from '../styles/Navbar.module.css'
-import Button from './Button'
+import styles from '../../styles/Navbar.module.css'
+import Button from '../util/Button'
 const Navbar = ({ auth, handleAction }) => {
 	return (
 		<Fragment>
@@ -15,7 +15,7 @@ const Navbar = ({ auth, handleAction }) => {
 				) : (
 					<Fragment>
 						<Button color="black" bgColor="transparent" action={() => handleAction('login')}>Login</Button>
-						<Button color="white" bgColor="#6868AC" action={() => handleAction('register')}>Register</Button>
+						<Button color="white" bgColor="#6868AC" action={() => handleAction('signup')}>Signup</Button>
 					</Fragment>
 				)}
 			</nav>

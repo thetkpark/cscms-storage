@@ -89,8 +89,9 @@ func main() {
 	authHandler := handlers.NewAuthRouteHandler(logger, gormUserDataStore, jwtManager, entrypoint)
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowMethods: "GET POST",
+		AllowOrigins:     "*",
+		AllowMethods:     "GET POST PATCH DELETE",
+		AllowCredentials: true,
 	}))
 
 	app.Get("/api/ping", func(c *fiber.Ctx) error {

@@ -21,7 +21,7 @@ const DropZone = ({ onDrop, selectedFilename, type }) => {
 		if (type === 'file') {
 			return (
 				<Fragment>
-					<img src="file.png" alt="file" />
+					<img src="file.png" alt="file-icon" />
 					<h2>Drag and Drop your file</h2>
 					<p>Drop your file here, or click to select file</p>
 					<p>The maximum file size is 100MB</p>
@@ -30,7 +30,7 @@ const DropZone = ({ onDrop, selectedFilename, type }) => {
 		} else if (type === 'image') {
 			return (
 				<Fragment>
-					<img src="image.png" alt="image" />
+					<img src="image.png" alt="img-icon" />
 					<h2>Drag and Drop your image</h2>
 					<p>Drop your image here, or click to select image</p>
 					<p>The maximum file size is 5MB</p>

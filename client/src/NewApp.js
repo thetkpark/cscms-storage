@@ -5,6 +5,7 @@ import Sidebar from './components/layout/Sidebar'
 import AuthForm from './components/auth/AuthForm'
 import styles from './styles/NewApp.module.css'
 import { Dialog } from '@material-ui/core'
+import DropZone from './components/upload/Dropzone'
 function App() {
 	const [route, setRoute] = useState('file')
 	const [auth, setAuth] = useState(false)
@@ -34,6 +35,22 @@ function App() {
 		<div className={styles.App}>
 			<div className={styles.Wrapper}>
 				<Navbar auth={auth} handleAction={handleAction} />
+				<div style={{ padding: '2rem 8rem', display: 'flex', flexDirection: 'column' }}>
+					<div>Hey Wagyu!</div>
+					<div
+						style={{
+							background: 'white',
+							width: '65vw',
+							height: '60vh',
+							margin: '1rem auto',
+							borderRadius: '50px',
+							padding:'3rem'
+						}}
+					>
+
+						<DropZone type={route}/>
+					</div>
+				</div>
 				<Sidebar currentRoute={route} handleChangeRoute={route => setRoute(route)} />
 				{dialog ? (
 					<Dialog open={dialog !== null} onClose={() => setDialog(null)}>

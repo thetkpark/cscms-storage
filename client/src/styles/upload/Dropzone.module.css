@@ -1,0 +1,19 @@
+.Dropzone {
+	height: 90%;
+	width: 100%;
+	border: 2px dashed #6F6CBB;
+}
+.Dropzone.active {
+    height: 70%;
+}
+.DropZoneTextContainer {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100%;
+	flex-direction: column;
+	color: #8F8F8F;
+}
+.DropZoneTextContainer p {
+	margin: 0;
+}

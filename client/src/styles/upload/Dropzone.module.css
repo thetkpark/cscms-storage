@@ -3,6 +3,9 @@
 	width: 100%;
 	border: 2px dashed #6F6CBB;
 }
+.Dropzone.drag {
+	background: #B0B2E2;
+}
 .Dropzone.active {
     height: 70%;
 }
@@ -16,4 +19,7 @@
 }
 .DropZoneTextContainer p {
 	margin: 0;
+}
+.drag .DropZoneTextContainer h2 {
+	color: #FFFFFF;
 }

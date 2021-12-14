@@ -10,6 +10,14 @@ const DropZone = ({ onDrop, selectedFilename, type }) => {
 	})
 
 	const renderContainerText = () => {
+		if (isDragActive) {
+			return (
+				<Fragment>
+					<img src="dropfile.png" alt="dropfile" />
+					<h2 className={styles.dropfileText}>Drop right here !!!</h2>
+				</Fragment>
+			)
+		}
 		if (type === 'file') {
 			return (
 				<Fragment>
@@ -30,9 +38,18 @@ const DropZone = ({ onDrop, selectedFilename, type }) => {
 			)
 		}
 	}
+	const getClassName = () => {
+		if (isDragActive) {
+			return styles.drag
+		}
+        if (selectedFilename.length !== 0) {
+            return styles.active
+        }
+		return ''
+	}
 
 	return (
-		<div className={`${styles.Dropzone}`} {...getRootProps()}>
+		<div className={`${styles.Dropzone} ${getClassName()}`} {...getRootProps()}>
 			<input className="dropzone-input" {...getInputProps()} />
 			<div className={styles.DropZoneTextContainer}>{renderContainerText()}</div>
 		</div>

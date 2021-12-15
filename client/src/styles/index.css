@@ -18,3 +18,34 @@ span[role='link'] {
 	cursor: pointer;
 	color: #6868ac;
 }
+
+.MuiSlider-root,
+.MuiSlider-track,
+.MuiSlider-rail {
+	height: 8px !important;
+	border-radius: 4px !important;
+}
+.MuiSlider-track,
+.MuiSlider-thumb {
+	background-color: #6868ac;
+}
+.MuiSlider-rail {
+	background-color: rgba(48, 127, 226, 0.3);
+}
+.MuiSlider-thumb {
+	width: 18px !important;
+	height: 18px !important;
+}
+div[role='textbox'] {
+	background-color: #fff;
+	border-radius: 10px;
+	height: 40px;
+	width: 300px;
+}
+div[role='textbox'] input {
+	padding: 10px 20px;
+	font-size: 14px;
+}
+div[role='textbox'] fieldset {
+	border: none;
+}

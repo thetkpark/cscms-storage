@@ -1,13 +1,10 @@
 .Dropzone {
-	height: 90%;
+	flex:1;
 	width: 100%;
 	border: 2px dashed #6F6CBB;
 }
 .Dropzone.drag {
 	background: #B0B2E2;
-}
-.Dropzone.active {
-    height: 70%;
 }
 .DropZoneTextContainer {
 	display: flex;

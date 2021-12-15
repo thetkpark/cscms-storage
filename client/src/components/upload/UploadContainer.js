@@ -2,9 +2,12 @@ import { useEffect, useState } from 'react'
 import DropZone from './Dropzone'
 import Button from '../util/Button'
 import Icon from '../util/Icon'
+import { Slider, TextField } from '@material-ui/core'
 const UploadContainer = ({ type }) => {
 	const [selectedFile, setSelectedFile] = useState(null)
 	const [error, setError] = useState('')
+	const [duration, setDuration] = useState(7)
+	const [slug, setSlug] = useState('')
 	useEffect(() => {
 		setSelectedFile(null)
 		setError('')
@@ -25,35 +28,89 @@ const UploadContainer = ({ type }) => {
 	return (
 		<div
 			style={{
-				background: 'white',
-				width: '65vw',
-				height: '60vh',
-				margin: '1rem auto',
-				borderRadius: '50px',
-				padding: '3rem',
+				height: '75vh',
 				display: 'flex',
 				flexDirection: 'column',
-				alignItems: 'center'
+				margin: '1rem auto'
 			}}
 		>
-			<DropZone
-				type={type}
-				selectedFilename={selectedFile ? selectedFile.name : ''}
-				onDrop={onDrop}
-			/>
-			{selectedFile ? <div style={{ margin: '1rem' }}>{selectedFile.name}</div> : null}
-			<Button
-				bgColor={'#E9EEFF'}
+			<div
 				style={{
-					border: 'none',
-					fontSize: '.9rem',
-					width: '170px',
-					height: '50px',
-					marginTop: '1rem'
+					background: 'white',
+					width: '65vw',
+					flex: '1',
+					borderRadius: '50px',
+					padding: '3rem',
+					display: 'flex',
+					flexDirection: 'column',
+					alignItems: 'center'
 				}}
 			>
-				<Icon name="upload" role="icon" /> Upload
-			</Button>
+				<DropZone
+					type={type}
+					selectedFilename={selectedFile ? selectedFile.name : ''}
+					onDrop={onDrop}
+				/>
+				{selectedFile ? (
+					<div style={{ marginTop: '2rem' }}>{selectedFile.name}</div>
+				) : null}
+				<Button
+					bgColor={'#E9EEFF'}
+					style={{
+						border: 'none',
+						fontSize: '.9rem',
+						width: '170px',
+						height: '50px',
+						marginTop: '2rem'
+					}}
+				>
+					<Icon name="upload" role="icon" /> Upload
+				</Button>
+			</div>
+			{type === 'file' ? (
+				<div style={{ marginTop: '3rem', display: 'flex', justifyContent: 'center' }}>
+					<div style={{ width: '280px', padding: '0 3rem' }}>
+						<div
+							style={{
+								display: 'flex',
+								justifyContent: 'space-between',
+								marginBottom: '1rem'
+							}}
+						>
+							<div>Storage Duration (Days)</div>
+							<div>{duration}</div>
+						</div>
+						<div style={{ width: '85%' }}>
+							<Slider
+								value={duration}
+								min={1}
+								max={30}
+								onChange={(event, val) => {
+									setDuration(val)
+								}}
+							/>
+						</div>
+					</div>
+					<div style={{ padding: '0 3rem' }}>
+						<div
+							style={{
+								marginBottom: '1rem'
+							}}
+						>
+							Custom Slug for accessing the file (Optional)
+						</div>
+						<div>
+							<TextField
+								variant="outlined"
+								role="textbox"
+								placeholder="slug"
+								value={slug}
+								onChange={(event, val) => setSlug(val)}
+							/>
+						</div>
+					</div>
+				</div>
+			) : null}
 		</div>
 	)
 }

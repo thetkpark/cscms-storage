@@ -74,7 +74,8 @@ const UploadContainer = ({ type }) => {
 							style={{
 								display: 'flex',
 								justifyContent: 'space-between',
-								marginBottom: '1rem'
+								marginBottom: '1rem',
+								fontWeight: '500'
 							}}
 						>
 							<div>Storage Duration (Days)</div>
@@ -94,7 +95,8 @@ const UploadContainer = ({ type }) => {
 					<div style={{ padding: '0 3rem' }}>
 						<div
 							style={{
-								marginBottom: '1rem'
+								marginBottom: '1rem',
+								fontWeight: '500'
 							}}
 						>
 							Custom Slug for accessing the file (Optional)

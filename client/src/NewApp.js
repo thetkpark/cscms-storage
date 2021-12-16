@@ -49,6 +49,10 @@ function App() {
 			case 'myfile':
 				if (auth) return <Fragment></Fragment>
 				setRoute('file')
+				break
+			default:
+				setRoute('file')
+				break
 		}
 	}
 	return (

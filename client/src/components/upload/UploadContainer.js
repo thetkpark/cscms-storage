@@ -3,6 +3,7 @@ import DropZone from './Dropzone'
 import Button from '../util/Button'
 import Icon from '../util/Icon'
 import { Slider, TextField } from '@material-ui/core'
+import FileDetail from './FileDetail'
 const UploadContainer = ({ type }) => {
 	const [selectedFile, setSelectedFile] = useState(null)
 	const [error, setError] = useState('')
@@ -52,7 +53,7 @@ const UploadContainer = ({ type }) => {
 					onDrop={onDrop}
 				/>
 				{selectedFile ? (
-					<div style={{ marginTop: '2rem' }}>{selectedFile.name}</div>
+					<FileDetail type={type} file={selectedFile} onRemove={() => setSelectedFile(null)} />
 				) : null}
 				<Button
 					bgColor={'#E9EEFF'}

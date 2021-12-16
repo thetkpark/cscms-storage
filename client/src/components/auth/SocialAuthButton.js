@@ -1,10 +1,10 @@
 import Icon from '../util/Icon'
 import styles from '../../styles/auth/SocialAuth.module.css'
 import { toTitleCase } from '../../utils/formatText'
-import { useRecoilState } from 'recoil'
+import { useSetRecoilState } from 'recoil'
 import { authState } from '../../store/auth'
 const SocialAuthButton = ({ mode, platform }) => {
-    const [auth,setAuth] = useRecoilState(authState)
+    const setAuth = useSetRecoilState(authState)
 	const handleAction = (mode, platform) => {
 		switch (mode) {
 			case 'login':

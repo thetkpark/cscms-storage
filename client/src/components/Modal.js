@@ -12,7 +12,7 @@ import {
 	Flex,
 	Button
 } from '@adobe/react-spectrum'
-import { formatBytes } from './utils/formatBytes'
+import { formatBytes } from '../utils/formatBytes'
 dayjs.extend(localizedFormat)
 
 const FileDataModal = ({ show, fileData, closeDialog }) => {
@@ -38,9 +38,7 @@ const FileDataModal = ({ show, fileData, closeDialog }) => {
 						</Flex>
 						<Text>File name: {fileData.file_name}</Text>
 						<Text>File size: {formatBytes(fileData.file_size)}</Text>
-						<Text>
-							Valid Though: {dayjs(fileData.created_at).add(1, 'month').format('LLL')}
-						</Text>
+						<Text>Valid Though: {dayjs(fileData.expired_at).format('LLL')}</Text>
 					</Flex>
 				</Content>
 				<ButtonGroup>

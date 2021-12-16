@@ -9,15 +9,15 @@ import (
 )
 
 type FileDataStore interface {
-	Create(id, token, nonce, filename string, filesize uint64) (*model.File, error)
+	Create(id, token, nonce, filename string, filesize uint64, storeDuration time.Duration) (*model.File, error)
 	FindByToken(token string) (*model.File, error)
 	IncreaseVisited(id string) error
 }
 
 type GormFileDataStore struct {
-	log           hclog.Logger
-	db            *gorm.DB
-	storeDuration time.Duration
+	log              hclog.Logger
+	db               *gorm.DB
+	maxStoreDuration time.Duration
 }
 
 func NewGormFileDataStore(l hclog.Logger, db *gorm.DB, duration time.Duration) (*GormFileDataStore, error) {
@@ -26,13 +26,13 @@ func NewGormFileDataStore(l hclog.Logger, db *gorm.DB, duration time.Duration) (
 	}
 
 	return &GormFileDataStore{
-		log:           l,
-		db:            db,
-		storeDuration: duration,
+		log:              l,
+		db:               db,
+		maxStoreDuration: duration,
 	}, nil
 }
 
-func (store *GormFileDataStore) Create(id, token, nonce, filename string, filesize uint64) (*model.File, error) {
+func (store *GormFileDataStore) Create(id, token, nonce, filename string, filesize uint64, storeDuration time.Duration) (*model.File, error) {
 	file := &model.File{
 		ID:        id,
 		Token:     token,
@@ -41,6 +41,7 @@ func (store *GormFileDataStore) Create(id, token, nonce, filename string, filesi
 		FileSize:  filesize,
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
+		ExpiredAt: time.Now().UTC().Add(storeDuration),
 		Visited:   0,
 	}
 
@@ -64,7 +65,7 @@ func (store *GormFileDataStore) FindByToken(token string) (*model.File, error) {
 
 	var file *model.File
 	for _, v := range files {
-		if v.CreatedAt.UTC().Add(store.storeDuration).After(time.Now().UTC()) {
+		if v.ExpiredAt.UTC().After(time.Now().UTC()) {
 			file = v
 			break
 		}

@@ -6,7 +6,7 @@ import (
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/handlers"
 	"github.com/thetkpark/cscms-temp-storage/service"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
 	"os"
@@ -20,7 +20,8 @@ import (
 func main() {
 	logger := hclog.Default()
 
-	masterKey, storagePath, sqlitePath, port, storeDuration := getEnv()
+	masterKey, storagePath, port, maxStoreDuration := getEnv()
+	dbHost, dbPort, dbUsername, dbPassword, dbName := getDBEnv()
 
 	app := fiber.New(fiber.Config{
 		BodyLimit: 150 << 20,
@@ -46,11 +47,12 @@ func main() {
 	})
 
 	// Create data store
-	db, err := gorm.Open(sqlite.Open(sqlitePath), &gorm.Config{})
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbUsername, dbPassword, dbHost, dbPort, dbName)
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalln("unable to open sqlite db", err)
 	}
-	gormFileDataStore, err := data.NewGormFileDataStore(logger, db, storeDuration)
+	gormFileDataStore, err := data.NewGormFileDataStore(logger, db, maxStoreDuration)
 	if err != nil {
 		log.Fatalln("unable to run gorm migration", err)
 	}
@@ -63,7 +65,7 @@ func main() {
 	}
 
 	// Create handlers
-	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager)
+	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager, maxStoreDuration)
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
@@ -80,6 +82,7 @@ func main() {
 	app.Post("/api/file", fileHandler.UploadFile)
 
 	app.Static("/", "./client/build")
+	app.Static("/404", "./client/build")
 
 	app.Get("/:token", fileHandler.GetFile)
 
@@ -89,13 +92,12 @@ func main() {
 	}
 }
 
-func getEnv() (string, string, string, string, time.Duration) {
+func getEnv() (string, string, string, time.Duration) {
 	// Required env
 	key := os.Getenv("MASTER_KEY")
 	storagePath := os.Getenv("STORAGE_PATH")
-	dbPath := os.Getenv("SQLITE_PATH")
-	if len(key) == 0 || len(storagePath) == 0 || len(dbPath) == 0 {
-		log.Fatalln("MASTER_KEY, SQLITE_PATH STORAGE_PATH env must be defined")
+	if len(key) == 0 || len(storagePath) == 0 {
+		log.Fatalln("MASTER_KEY and STORAGE_PATH env must be defined")
 	}
 
 	// Optional env
@@ -106,15 +108,25 @@ func getEnv() (string, string, string, string, time.Duration) {
 		port = fmt.Sprintf(":%s", port)
 	}
 
-	storeDuration := os.Getenv("STORE_DURATION") // in days
+	maxStoreDuration := os.Getenv("STORE_DURATION") // in days
 	duration := time.Hour * 24 * 30
-	if len(storeDuration) != 0 {
-		date, err := strconv.Atoi(storeDuration)
+	if len(maxStoreDuration) != 0 {
+		date, err := strconv.Atoi(maxStoreDuration)
 		if err != nil {
 			log.Fatalln("STORE_DURATION is not a valid number")
 		}
 		duration = time.Hour * 24 * time.Duration(date)
 	}
 
-	return key, storagePath, dbPath, port, duration
+	return key, storagePath, port, duration
+}
+
+func getDBEnv() (string, string, string, string, string) {
+	username := os.Getenv("DB_USERNAME")
+	password := os.Getenv("DB_PASSWORD")
+	port := os.Getenv("DB_PORT")
+	host := os.Getenv("DB_HOST")
+	dbname := os.Getenv("DB_DATABASE")
+
+	return host, port, username, password, dbname
 }

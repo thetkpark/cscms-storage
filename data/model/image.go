@@ -9,5 +9,5 @@ type Image struct {
 	OriginalFilename string    `json:"original_filename"`
 	FileSize         uint64    `json:"file_size"`
 	FilePath         string    `json:"file_path"`
-	UserID           uint      `json:"user_id"`
+	UserID           uint      `json:"user_id" gorm:"index"`
 }

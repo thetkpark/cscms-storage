@@ -7,12 +7,12 @@ type File struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	ExpiredAt time.Time `json:"expired_at"`
-	Token     string    `gorm:"unique uniqueIndex" json:"token"`
+	Token     string    `gorm:"index" json:"token"`
 	Nonce     string    `json:"nonce"`
 	Filename  string    `json:"filename"`
 	FileSize  uint64    `json:"file_size"`
 	Visited   uint      `json:"visited"`
-	UserID    uint
-	FileType  string `json:"file_type"`
-	Encrypted bool   `json:"encrypted"`
+	UserID    uint      `gorm:"index"`
+	FileType  string    `json:"file_type"`
+	Encrypted bool      `json:"encrypted"`
 }

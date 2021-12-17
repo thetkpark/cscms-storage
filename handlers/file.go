@@ -9,6 +9,7 @@ import (
 	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"github.com/thetkpark/cscms-temp-storage/service"
 	"gorm.io/gorm"
+	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -33,35 +34,9 @@ func NewFileRoutesHandler(log hclog.Logger, enc service.EncryptionManager, data 
 }
 
 func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
-	tStart := time.Now()
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to get file from form-data", err)
-	}
-
-	// Create new fileId
-	fileId, err := service.GenerateFileId()
-	if err != nil {
-		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to create file id", err)
-	}
-
-	// Open multipart form header
-	file, err := fileHeader.Open()
-	if err != nil {
-		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to open file", err)
-	}
-
-	// Encrypt the file
-	tEncrypt := time.Now()
-	encrypted, nonce, err := h.encryptionManager.Encrypt(file)
-	if err != nil {
-		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable encrypt the file", err)
-	}
-	encryptFileDuration := time.Now().Sub(tEncrypt)
-
-	// Write encrypted file to disk
-	if err := h.storageManager.WriteToNewFile(fileId, encrypted); err != nil {
-		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to write encrypted data to file", err)
 	}
 
 	// Check slug
@@ -91,11 +66,17 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 		storeDuration = time.Duration(day) * time.Hour * 24
 	}
 
-	// Create new fileInfo record in db
+	// Generate new file ID
+	fileId, err := service.GenerateFileId()
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to create file id", err)
+	}
+
+	// Create new fileInfo struct
 	fileInfo := &model.File{
 		ID:        fileId,
 		Token:     fileToken,
-		Nonce:     nonce,
+		Nonce:     "",
 		Filename:  fileHeader.Filename,
 		FileSize:  uint64(fileHeader.Size),
 		CreatedAt: time.Now().UTC(),
@@ -103,6 +84,8 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 		ExpiredAt: time.Now().UTC().Add(storeDuration),
 		Visited:   0,
 		UserID:    0,
+		FileType:  fileHeader.Header.Get("Content-Type"),
+		Encrypted: false,
 	}
 
 	// Get userId if exist
@@ -113,6 +96,27 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 			return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to parse to user model", fmt.Errorf("user model convertion error"))
 		}
 		fileInfo.UserID = userModel.ID
+		fileInfo.Encrypted = true
+	}
+
+	// Open file from multipart form header
+	var file io.Reader
+	file, err = fileHeader.Open()
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to open file", err)
+	}
+
+	if fileInfo.Encrypted {
+		// Encrypt the file
+		file, fileInfo.Nonce, err = h.encryptionManager.Encrypt(file)
+		if err != nil {
+			return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable encrypt the file", err)
+		}
+	}
+
+	// Write file content to disk
+	if err := h.storageManager.WriteToNewFile(fileId, file); err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to write encrypted data to file", err)
 	}
 
 	err = h.fileDataStore.Create(fileInfo)
@@ -120,16 +124,7 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to save file info to db", err)
 	}
 
-	return c.JSON(fiber.Map{
-		"id":           fileInfo.ID,
-		"token":        fileInfo.Token,
-		"file_size":    fileInfo.FileSize,
-		"file_name":    fileInfo.Filename,
-		"created_at":   fileInfo.CreatedAt,
-		"expired_at":   fileInfo.ExpiredAt,
-		"encrypt_time": encryptFileDuration.String(),
-		"total_time":   time.Since(tStart).String(),
-	})
+	return c.JSON(fileInfo)
 }
 
 func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {

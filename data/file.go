@@ -12,6 +12,7 @@ type FileDataStore interface {
 	Create(file *model.File) error
 	FindByToken(token string) (*model.File, error)
 	IncreaseVisited(id string) error
+	FindByUserID(userId uint) (*[]model.File, error)
 }
 
 type GormFileDataStore struct {
@@ -59,6 +60,12 @@ func (store *GormFileDataStore) FindByToken(token string) (*model.File, error) {
 		return nil, gorm.ErrRecordNotFound
 	}
 	return file, nil
+}
+
+func (store *GormFileDataStore) FindByUserID(userId uint) (*[]model.File, error) {
+	var files []model.File
+	tx := store.db.Where(&model.File{UserID: userId}).Find(&files)
+	return &files, tx.Error
 }
 
 func (store *GormFileDataStore) IncreaseVisited(id string) error {

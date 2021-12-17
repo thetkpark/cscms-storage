@@ -105,9 +105,11 @@ func main() {
 
 	filePath := apiPath.Group("/file")
 	filePath.Post("/", fileHandler.UploadFile)
+	filePath.Get("/", authHandler.AuthenticatedOnly, fileHandler.GetOwnFiles)
 
 	imagePath := apiPath.Group("/image")
 	imagePath.Post("/", imageHandler.UploadImage)
+	imagePath.Get("/", authHandler.AuthenticatedOnly, imageHandler.GetOwnImages)
 
 	// User Authentication with Oauth
 	goth.UseProviders(

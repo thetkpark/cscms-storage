@@ -8,6 +8,7 @@ import (
 
 type ImageDataStore interface {
 	Create(image *model.Image) error
+	FindByUserID(userID uint) (*[]model.Image, error)
 }
 
 type GormImageDataStore struct {
@@ -28,4 +29,10 @@ func NewGormImageDataStore(l hclog.Logger, db *gorm.DB) (*GormImageDataStore, er
 func (g *GormImageDataStore) Create(image *model.Image) error {
 	tx := g.db.Create(image)
 	return tx.Error
+}
+
+func (g *GormImageDataStore) FindByUserID(userID uint) (*[]model.Image, error) {
+	var images []model.Image
+	tx := g.db.Where(&model.Image{UserID: userID}).Find(&images)
+	return &images, tx.Error
 }

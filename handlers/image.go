@@ -83,6 +83,22 @@ func (h *ImageRouteHandler) UploadImage(c *fiber.Ctx) error {
 	return c.JSON(imageInfo)
 }
 
+func (h *ImageRouteHandler) GetOwnImages(c *fiber.Ctx) error {
+	// Get userId
+	user := c.UserContext().Value("user")
+	userModel, ok := user.(*model.User)
+	if !ok {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to parse to user model", fmt.Errorf("user model convertion error"))
+	}
+
+	images, err := h.imageDataStore.FindByUserID(userModel.ID)
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "Unable to find images by user ID", err)
+	}
+
+	return c.JSON(images)
+}
+
 func (h *ImageRouteHandler) validateFileFormat(mimeType string, fileName string) (string, error) {
 	switch mimeType {
 	case "image/png", "image/jpeg", "image/gif", "image/x-icon", "image/heic", "image/webp", "image/tiff", "image/svg+xml", "image/bmp", "image/apng", "image/avif":

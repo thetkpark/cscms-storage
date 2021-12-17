@@ -178,3 +178,19 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 
 	return nil
 }
+
+func (h *FileRoutesHandler) GetOwnFiles(c *fiber.Ctx) error {
+	// Get userId
+	user := c.UserContext().Value("user")
+	userModel, ok := user.(*model.User)
+	if !ok {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to parse to user model", fmt.Errorf("user model convertion error"))
+	}
+
+	files, err := h.fileDataStore.FindByUserID(userModel.ID)
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "Unable to find files by user ID", err)
+	}
+
+	return c.JSON(files)
+}

@@ -131,7 +131,7 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 	token := strings.ToLower(c.Params("token"))
 
 	// Find file by token
-	file, err := h.fileDataStore.FindByToken(token)
+	fileInfo, err := h.fileDataStore.FindByToken(token)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return c.Redirect(c.BaseURL())
@@ -140,7 +140,7 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 	}
 
 	// Check if file still exist on storage
-	if exist, err := h.storageManager.Exist(file.ID); !exist {
+	if exist, err := h.storageManager.Exist(fileInfo.ID); !exist {
 		if err == nil {
 			// File is not exist anymore
 			return c.Redirect(c.BaseURL())
@@ -149,24 +149,31 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 	}
 
 	// Get encrypted file from storage manager
-	encryptedFile, err := h.storageManager.OpenFile(file.ID)
+	file, err := h.storageManager.OpenFile(fileInfo.ID)
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to open encrypted file", err)
 	}
 
-	// Decrypt file
-	err = h.encryptionManager.Decrypt(encryptedFile, file.Nonce, c)
-	if err != nil {
-		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to decrypt", err)
+	if fileInfo.Encrypted {
+		// Decrypt file if encrypted
+		err = h.encryptionManager.Decrypt(file, fileInfo.Nonce, c)
+		if err != nil {
+			return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to decrypt", err)
+		}
+	} else {
+		// Copy file content to response
+		if _, err := io.Copy(c, file); err != nil {
+			return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to copy file content to response", err)
+		}
 	}
 
 	// Increase visited count
-	err = h.fileDataStore.IncreaseVisited(file.ID)
+	err = h.fileDataStore.IncreaseVisited(fileInfo.ID)
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to increase count", err)
 	}
 
-	c.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, file.Filename))
+	c.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, fileInfo.Filename))
 	c.Set("Content-Type", "application/octet-stream")
 
 	return nil

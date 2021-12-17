@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"time"
@@ -11,13 +10,14 @@ import (
 type ApplicationEnvironmentVariable struct {
 	MasterKey                        string
 	FileStoragePath                  string
-	FileStoreMaxDuration             string
+	FileStoreMaxDuration             time.Duration
 	AzureBlobStorageConnectionString string
 	AzureBlobStorageContainerName    string
 	Port                             string
 	DB                               DatabaseEnvironmentVariable
 	OauthGitHub                      OauthEnvironmentVariable
 	OAuthGoogle                      OauthEnvironmentVariable
+	Entrypoint                       string
 }
 
 type DatabaseEnvironmentVariable struct {
@@ -31,41 +31,63 @@ type DatabaseEnvironmentVariable struct {
 type OauthEnvironmentVariable struct {
 	ClientSecret string
 	SecretKey    string
-	CallbackURL  string
 }
 
-func getEnv() (string, string, string, time.Duration, string, string) {
-	// Required env
-	key := os.Getenv("MASTER_KEY")
-	storagePath := os.Getenv("STORAGE_PATH")
-	if len(key) == 0 || len(storagePath) == 0 {
-		log.Fatalln("MASTER_KEY and STORAGE_PATH env must be defined")
+func getEnv() (*ApplicationEnvironmentVariable, error) {
+	requireEnv := []string{"MASTER_KEY", "STORAGE_PATH", "AZSTORAGE_CONNECTION_STRING", "AZSTORAGE_CONTAINER_NAME"}
+	missingENVs := make([]string, 0, len(requireEnv))
+
+	appEnv := &ApplicationEnvironmentVariable{
+		MasterKey:                        getAndCheckRequireENV("MASTER_KEY", &missingENVs),
+		FileStoragePath:                  getAndCheckRequireENV("STORAGE_PATH", &missingENVs),
+		FileStoreMaxDuration:             time.Hour * 24 * 30,
+		AzureBlobStorageConnectionString: getAndCheckRequireENV("AZSTORAGE_CONNECTION_STRING", &missingENVs),
+		AzureBlobStorageContainerName:    getAndCheckRequireENV("AZSTORAGE_CONTAINER_NAME", &missingENVs),
+		Port:                             ":5000",
+		Entrypoint:                       getAndCheckRequireENV("ENTRYPOINT", &missingENVs),
+		DB: DatabaseEnvironmentVariable{
+			Username:     getAndCheckRequireENV("DB_USERNAME", &missingENVs),
+			Password:     getAndCheckRequireENV("DB_PASSWORD", &missingENVs),
+			Host:         getAndCheckRequireENV("DB_PORT", &missingENVs),
+			Port:         getAndCheckRequireENV("DB_HOST", &missingENVs),
+			DatabaseName: getAndCheckRequireENV("DB_DATABASE", &missingENVs),
+		},
+		OauthGitHub: OauthEnvironmentVariable{
+			ClientSecret: getAndCheckRequireENV("GITHUB_OAUTH_CLIENT_ID", &missingENVs),
+			SecretKey:    getAndCheckRequireENV("GITHUB_OAUTH_SECRET_KEY", &missingENVs),
+		},
+		OAuthGoogle: OauthEnvironmentVariable{
+			ClientSecret: getAndCheckRequireENV("GOOGLE_OAUTH_CLIENT_ID", &missingENVs),
+			SecretKey:    getAndCheckRequireENV("GOOGLE_OAUTH_SECRET_KEY", &missingENVs),
+		},
 	}
-	azStorageConnectionString := os.Getenv("AZSTORAGE_CONNECTION_STRING")
-	azStorageContainerName := os.Getenv("AZSTORAGE_CONTAINER_NAME")
-	if len(azStorageConnectionString) == 0 || len(azStorageContainerName) == 0 {
-		log.Fatalln("AZSTORAGE_CONNECTION_STRING and AZSTORAGE_CONTAINER_NAME are required")
+
+	// Check missing require ENV
+	if len(missingENVs) != 0 {
+		errorString := "Missing ENV: "
+		for _, envKey := range missingENVs {
+			errorString += envKey + " "
+		}
+		return nil, fmt.Errorf(errorString)
 	}
 
 	// Optional env
 	port := os.Getenv("PORT")
-	if len(port) == 0 {
-		port = fmt.Sprintf(":%d", 5000)
-	} else {
-		port = fmt.Sprintf(":%s", port)
+	if len(port) != 0 {
+		appEnv.Port = fmt.Sprintf(":%s", port)
 	}
 
 	maxStoreDuration := os.Getenv("STORE_DURATION") // in days
-	duration := time.Hour * 24 * 30
 	if len(maxStoreDuration) != 0 {
 		date, err := strconv.Atoi(maxStoreDuration)
 		if err != nil {
-			log.Fatalln("STORE_DURATION is not a valid number")
+			return nil, fmt.Errorf("STORE_DURATION is not a valid number")
+
 		}
-		duration = time.Hour * 24 * time.Duration(date)
+		appEnv.FileStoreMaxDuration = time.Hour * 24 * time.Duration(date)
 	}
 
-	return key, storagePath, port, duration, azStorageConnectionString, azStorageContainerName
+	return appEnv, nil
 }
 
 func getDBEnv() (string, string, string, string, string) {
@@ -86,4 +108,12 @@ func getOauthEnv() (string, string, string, string, string) {
 	ggSecretKey := os.Getenv("GOOGLE_OAUTH_SECRET_KEY")
 
 	return entrypoint, ghClientId, ghSecretKey, ggClientId, ggSecretKey
+}
+
+func getAndCheckRequireENV(envName string, missingEnv *[]string) string {
+	value := os.Getenv(envName)
+	if len(value) == 0 {
+		*missingEnv = append(*missingEnv, envName)
+	}
+	return value
 }

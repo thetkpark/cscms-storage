@@ -79,7 +79,7 @@ func (h *ImageRouteHandler) UploadImage(c *fiber.Ctx) error {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to save image info to db", err)
 	}
 
-	// Return the
+	// Return the image info
 	return c.JSON(imageInfo)
 }
 

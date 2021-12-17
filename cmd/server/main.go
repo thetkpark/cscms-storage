@@ -100,10 +100,15 @@ func main() {
 			"timestamp": time.Now(),
 		})
 	})
-	app.Post("/api/file", authHandler.ParseUserFromCookie, fileHandler.UploadFile)
+
+	apiPath := app.Group("/api", authHandler.ParseUserFromCookie)
+
+	filePath := apiPath.Group("/file")
+	filePath.Post("/", fileHandler.UploadFile)
 	//app.Get("/api/file/lists", authHandler.ParseUserFromCookie, authHandler.AuthenticatedOnly)
 
-	app.Post("/api/image", authHandler.ParseUserFromCookie, imageHandler.UploadImage)
+	imagePath := apiPath.Group("/image")
+	imagePath.Post("/", imageHandler.UploadImage)
 	//app.Get("/api/image/lists", authHandler.ParseUserFromCookie, authHandler.AuthenticatedOnly)
 
 	app.Static("/", "./client/build")
@@ -114,10 +119,11 @@ func main() {
 		github.New(appENVs.OauthGitHub.ClientSecret, appENVs.OauthGitHub.SecretKey, fmt.Sprintf("%s/auth/github/callback", appENVs.Entrypoint)),
 		google.New(appENVs.OAuthGoogle.ClientSecret, appENVs.OAuthGoogle.SecretKey, fmt.Sprintf("%s/auth/google/callback", appENVs.Entrypoint)))
 
-	app.Get("/auth/logout", authHandler.Logout)
-	app.Get("/auth/user", authHandler.ParseUserFromCookie, authHandler.GetUserInfo)
-	app.Get("/auth/:provider", goth_fiber.BeginAuthHandler)
-	app.Get("/auth/:provider/callback", authHandler.OauthProviderCallback)
+	auth := app.Group("/auth")
+	auth.Get("/logout", authHandler.Logout)
+	auth.Get("/user", authHandler.ParseUserFromCookie, authHandler.AuthenticatedOnly, authHandler.GetUserInfo)
+	auth.Get("/:provider", goth_fiber.BeginAuthHandler)
+	auth.Get("/:provider/callback", authHandler.OauthProviderCallback)
 
 	app.Get("/:token", fileHandler.GetFile)
 

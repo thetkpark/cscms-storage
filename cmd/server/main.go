@@ -89,7 +89,7 @@ func main() {
 	authHandler := handlers.NewAuthRouteHandler(logger, gormUserDataStore, jwtManager, appENVs.Entrypoint)
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "*",
+		AllowOrigins:     "https://storage.cscms.me, http://localhost:5050",
 		AllowMethods:     "GET POST PATCH DELETE",
 		AllowCredentials: true,
 	}))

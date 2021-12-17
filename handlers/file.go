@@ -39,6 +39,10 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to get file from form-data", err)
 	}
 
+	// Check image size (100MB)
+	if fileHeader.Size > 100<<20 {
+		return NewHTTPError(h.log, fiber.StatusBadRequest, "File too large", nil)
+	}
 	// Check slug
 	token, err := service.GenerateFileToken()
 	if err != nil {

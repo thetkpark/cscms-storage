@@ -32,6 +32,10 @@ func (h *ImageRouteHandler) UploadImage(c *fiber.Ctx) error {
 		return NewHTTPError(h.log, fiber.StatusBadRequest, "Unable to get file from multipart/form-data", err)
 	}
 
+	// Check image size (5MB)
+	if fileHeader.Size > 5<<20 {
+		return NewHTTPError(h.log, fiber.StatusBadRequest, "Image file too large", nil)
+	}
 	// Check image format and get extension
 	fileExtension, err := h.validateFileFormat(fileHeader.Header.Get("Content-Type"), fileHeader.Filename)
 	if err != nil {

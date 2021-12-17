@@ -96,7 +96,7 @@ func main() {
 
 	app.Get("/api/ping", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
-			"success":   true,
+			"message":   "pong",
 			"timestamp": time.Now(),
 		})
 	})

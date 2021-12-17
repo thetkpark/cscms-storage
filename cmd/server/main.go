@@ -105,26 +105,24 @@ func main() {
 
 	filePath := apiPath.Group("/file")
 	filePath.Post("/", fileHandler.UploadFile)
-	//app.Get("/api/file/lists", authHandler.ParseUserFromCookie, authHandler.AuthenticatedOnly)
 
 	imagePath := apiPath.Group("/image")
 	imagePath.Post("/", imageHandler.UploadImage)
-	//app.Get("/api/image/lists", authHandler.ParseUserFromCookie, authHandler.AuthenticatedOnly)
-
-	app.Static("/", "./client/build")
-	app.Static("/404", "./client/build")
 
 	// User Authentication with Oauth
 	goth.UseProviders(
 		github.New(appENVs.OauthGitHub.ClientSecret, appENVs.OauthGitHub.SecretKey, fmt.Sprintf("%s/auth/github/callback", appENVs.Entrypoint)),
 		google.New(appENVs.OAuthGoogle.ClientSecret, appENVs.OAuthGoogle.SecretKey, fmt.Sprintf("%s/auth/google/callback", appENVs.Entrypoint)))
 
-	auth := app.Group("/auth")
-	auth.Get("/logout", authHandler.Logout)
-	auth.Get("/user", authHandler.ParseUserFromCookie, authHandler.AuthenticatedOnly, authHandler.GetUserInfo)
-	auth.Get("/:provider", goth_fiber.BeginAuthHandler)
-	auth.Get("/:provider/callback", authHandler.OauthProviderCallback)
+	authPath := app.Group("/auth")
+	authPath.Get("/logout", authHandler.Logout)
+	authPath.Get("/user", authHandler.ParseUserFromCookie, authHandler.AuthenticatedOnly, authHandler.GetUserInfo)
+	authPath.Get("/:provider", goth_fiber.BeginAuthHandler)
+	authPath.Get("/:provider/callback", authHandler.OauthProviderCallback)
 
+	// Other routes
+	app.Static("/", "./client/build")
+	app.Static("/404", "./client/build")
 	app.Get("/:token", fileHandler.GetFile)
 
 	err = app.Listen(appENVs.Port)

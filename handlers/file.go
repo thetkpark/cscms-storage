@@ -134,7 +134,7 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 	fileInfo, err := h.fileDataStore.FindByToken(token)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return c.Redirect(c.BaseURL())
+			return c.Redirect(c.BaseURL() + "/404")
 		}
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to get file query", err)
 	}
@@ -143,7 +143,7 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 	if exist, err := h.storageManager.Exist(fileInfo.ID); !exist {
 		if err == nil {
 			// File is not exist anymore
-			return c.Redirect(c.BaseURL())
+			return c.Redirect(c.BaseURL() + "/404")
 		}
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to check if file exist", err)
 	}

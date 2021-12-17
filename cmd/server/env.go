@@ -48,8 +48,8 @@ func getAppENVs() (*ApplicationEnvironmentVariable, error) {
 		DB: DatabaseEnvironmentVariable{
 			Username:     getAndCheckRequireENV("DB_USERNAME", &missingENVs),
 			Password:     getAndCheckRequireENV("DB_PASSWORD", &missingENVs),
-			Host:         getAndCheckRequireENV("DB_PORT", &missingENVs),
-			Port:         getAndCheckRequireENV("DB_HOST", &missingENVs),
+			Host:         getAndCheckRequireENV("DB_HOST", &missingENVs),
+			Port:         getAndCheckRequireENV("DB_PORT", &missingENVs),
 			DatabaseName: getAndCheckRequireENV("DB_DATABASE", &missingENVs),
 		},
 		OauthGitHub: OauthEnvironmentVariable{

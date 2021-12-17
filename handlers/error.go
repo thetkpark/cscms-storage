@@ -6,7 +6,7 @@ import (
 )
 
 func NewHTTPError(log hclog.Logger, code int, message string, error error) error {
-	if code == 500 {
+	if code == fiber.StatusInternalServerError {
 		log.Error(message, error.Error())
 	}
 	return fiber.NewError(code, message)

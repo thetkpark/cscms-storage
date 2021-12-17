@@ -9,6 +9,5 @@ type Image struct {
 	OriginalFilename string    `json:"original_filename"`
 	FileSize         uint64    `json:"file_size"`
 	FilePath         string    `json:"file_path"`
-	Token            string    `json:"token"`
-	UserID           uint
+	UserID           uint      `json:"user_id"`
 }

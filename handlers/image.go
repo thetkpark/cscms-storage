@@ -5,8 +5,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-hclog"
 	"github.com/thetkpark/cscms-temp-storage/data"
+	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"github.com/thetkpark/cscms-temp-storage/service"
 	"regexp"
+	"time"
 )
 
 type ImageRouteHandler struct {
@@ -52,10 +54,33 @@ func (h *ImageRouteHandler) UploadImage(c *fiber.Ctx) error {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "Unable to upload image", err)
 	}
 
+	// Create ImageInfo struct
+	imageInfo := &model.Image{
+		CreatedAt:        time.Now().UTC(),
+		UpdatedAt:        time.Now().UTC(),
+		OriginalFilename: fileHeader.Filename,
+		FileSize:         uint64(fileHeader.Size),
+		FilePath:         imagePath,
+	}
+
+	// Get userId if exist
+	user := c.UserContext().Value("user")
+	if user != nil {
+		userModel, ok := user.(*model.User)
+		if !ok {
+			return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to parse to user model", fmt.Errorf("user model convertion error"))
+		}
+		imageInfo.UserID = userModel.ID
+	}
+
+	// Save image info to db
+	err = h.imageDataStore.Create(imageInfo)
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to save image info to db", err)
+	}
+
 	// Return the
-	return c.JSON(fiber.Map{
-		"image_path": imagePath,
-	})
+	return c.JSON(imageInfo)
 }
 
 func (h *ImageRouteHandler) validateFileFormat(mimeType string, fileName string) (string, error) {

@@ -103,7 +103,7 @@ func main() {
 	app.Post("/api/file", authHandler.ParseUserFromCookie, fileHandler.UploadFile)
 	//app.Get("/api/file/lists", authHandler.ParseUserFromCookie, authHandler.AuthenticatedOnly)
 
-	app.Post("/api/image", imageHandler.UploadImage)
+	app.Post("/api/image", authHandler.ParseUserFromCookie, imageHandler.UploadImage)
 	//app.Get("/api/image/lists", authHandler.ParseUserFromCookie, authHandler.AuthenticatedOnly)
 
 	app.Static("/", "./client/build")

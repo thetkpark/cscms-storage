@@ -13,4 +13,6 @@ type File struct {
 	FileSize  uint64    `json:"file_size"`
 	Visited   uint      `json:"visited"`
 	UserID    uint
+	FileType  string `json:"file_type"`
+	Encrypted bool   `json:"encrypted"`
 }

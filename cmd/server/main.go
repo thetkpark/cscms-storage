@@ -24,9 +24,10 @@ import (
 func main() {
 	logger := hclog.Default()
 
-	masterKey, storagePath, port, maxStoreDuration, azStorageConnString, azStorageConName := getEnv()
-	dbHost, dbPort, dbUsername, dbPassword, dbName := getDBEnv()
-	entrypoint, ghClientId, ghSecretKey, ggClientId, ggSecretKey := getOauthEnv()
+	appENVs, err := getAppENVs()
+	if err != nil {
+		log.Fatalln("Failed to get app ENVs", err)
+	}
 
 	app := fiber.New(fiber.Config{
 		BodyLimit: 150 << 20,
@@ -52,12 +53,12 @@ func main() {
 	})
 
 	// Create data store
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbUsername, dbPassword, dbHost, dbPort, dbName)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", appENVs.DB.Username, appENVs.DB.Password, appENVs.DB.Host, appENVs.DB.Port, appENVs.DB.DatabaseName)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalln("unable to open sqlite db", err)
 	}
-	gormFileDataStore, err := data.NewGormFileDataStore(logger, db, maxStoreDuration)
+	gormFileDataStore, err := data.NewGormFileDataStore(logger, db, appENVs.FileStoreMaxDuration)
 	if err != nil {
 		log.Fatalln("unable to run gorm migration on file table", err)
 	}
@@ -71,21 +72,21 @@ func main() {
 	}
 
 	// Create service managers for handler
-	sioEncryptionManager := service.NewSIOEncryptionManager(logger, masterKey)
-	diskStorageManager, err := service.NewDiskStorageManager(logger, storagePath)
+	sioEncryptionManager := service.NewSIOEncryptionManager(logger, appENVs.MasterKey)
+	diskStorageManager, err := service.NewDiskStorageManager(logger, appENVs.FileStoragePath)
 	if err != nil {
 		log.Fatalln("unable to create disk storage manager")
 	}
-	imageStorageManager, err := service.NewAzureImageStorageManager(logger, azStorageConnString, azStorageConName)
+	imageStorageManager, err := service.NewAzureImageStorageManager(logger, appENVs.AzureBlobStorageConnectionString, appENVs.AzureBlobStorageContainerName)
 	if err != nil {
 		log.Fatalln("unable to azure image storage manager")
 	}
 	jwtManager := service.NewJwtManager(os.Getenv("JWT_SECRET"))
 
 	// Create handlers
-	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager, maxStoreDuration)
+	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager, appENVs.FileStoreMaxDuration)
 	imageHandler := handlers.NewImageRouteHandler(logger, gormImageDataStore, imageStorageManager)
-	authHandler := handlers.NewAuthRouteHandler(logger, gormUserDataStore, jwtManager, entrypoint)
+	authHandler := handlers.NewAuthRouteHandler(logger, gormUserDataStore, jwtManager, appENVs.Entrypoint)
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     "*",
@@ -110,8 +111,8 @@ func main() {
 
 	// User Authentication with Oauth
 	goth.UseProviders(
-		github.New(ghClientId, ghSecretKey, fmt.Sprintf("%s/auth/github/callback", entrypoint)),
-		google.New(ggClientId, ggSecretKey, fmt.Sprintf("%s/auth/google/callback", entrypoint)))
+		github.New(appENVs.OauthGitHub.ClientSecret, appENVs.OauthGitHub.SecretKey, fmt.Sprintf("%s/auth/github/callback", appENVs.Entrypoint)),
+		google.New(appENVs.OAuthGoogle.ClientSecret, appENVs.OAuthGoogle.SecretKey, fmt.Sprintf("%s/auth/google/callback", appENVs.Entrypoint)))
 
 	app.Get("/auth/logout", authHandler.Logout)
 	app.Get("/auth/user", authHandler.ParseUserFromCookie, authHandler.GetUserInfo)
@@ -120,8 +121,8 @@ func main() {
 
 	app.Get("/:token", fileHandler.GetFile)
 
-	err = app.Listen(port)
+	err = app.Listen(appENVs.Port)
 	if err != nil {
-		log.Fatalf("unable to start server on %s: %v", port, err)
+		log.Fatalf("unable to start server on %s: %v", appENVs.Port, err)
 	}
 }

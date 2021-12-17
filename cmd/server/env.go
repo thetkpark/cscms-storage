@@ -33,7 +33,7 @@ type OauthEnvironmentVariable struct {
 	SecretKey    string
 }
 
-func getEnv() (*ApplicationEnvironmentVariable, error) {
+func getAppENVs() (*ApplicationEnvironmentVariable, error) {
 	requireEnv := []string{"MASTER_KEY", "STORAGE_PATH", "AZSTORAGE_CONNECTION_STRING", "AZSTORAGE_CONTAINER_NAME"}
 	missingENVs := make([]string, 0, len(requireEnv))
 
@@ -88,26 +88,6 @@ func getEnv() (*ApplicationEnvironmentVariable, error) {
 	}
 
 	return appEnv, nil
-}
-
-func getDBEnv() (string, string, string, string, string) {
-	username := os.Getenv("DB_USERNAME")
-	password := os.Getenv("DB_PASSWORD")
-	port := os.Getenv("DB_PORT")
-	host := os.Getenv("DB_HOST")
-	dbname := os.Getenv("DB_DATABASE")
-
-	return host, port, username, password, dbname
-}
-
-func getOauthEnv() (string, string, string, string, string) {
-	entrypoint := os.Getenv("ENTRYPOINT")
-	ghClientId := os.Getenv("GITHUB_OAUTH_CLIENT_ID")
-	ghSecretKey := os.Getenv("GITHUB_OAUTH_SECRET_KEY")
-	ggClientId := os.Getenv("GOOGLE_OAUTH_CLIENT_ID")
-	ggSecretKey := os.Getenv("GOOGLE_OAUTH_SECRET_KEY")
-
-	return entrypoint, ghClientId, ghSecretKey, ggClientId, ggSecretKey
 }
 
 func getAndCheckRequireENV(envName string, missingEnv *[]string) string {

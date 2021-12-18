@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"gorm.io/gorm"
+	"time"
+)
 
 type Image struct {
 	ID               uint      `gorm:"primaryKey,autoIncrement" json:"id"`
@@ -10,4 +13,5 @@ type Image struct {
 	FileSize         uint64    `json:"file_size"`
 	FilePath         string    `json:"file_path"`
 	UserID           uint      `json:"user_id" gorm:"index"`
+	DeletedAt        gorm.DeletedAt
 }

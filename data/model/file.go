@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"gorm.io/gorm"
+	"time"
+)
 
 type File struct {
 	ID        string    `gorm:"primaryKey" json:"id"`
@@ -15,4 +18,5 @@ type File struct {
 	UserID    uint      `gorm:"index"`
 	FileType  string    `json:"file_type"`
 	Encrypted bool      `json:"encrypted"`
+	DeletedAt gorm.DeletedAt
 }

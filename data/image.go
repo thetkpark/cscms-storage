@@ -9,6 +9,7 @@ import (
 type ImageDataStore interface {
 	Create(image *model.Image) error
 	FindByUserID(userID uint) (*[]model.Image, error)
+	DeleteByID(imageId uint) error
 }
 
 type GormImageDataStore struct {
@@ -28,6 +29,11 @@ func NewGormImageDataStore(l hclog.Logger, db *gorm.DB) (*GormImageDataStore, er
 
 func (g *GormImageDataStore) Create(image *model.Image) error {
 	tx := g.db.Create(image)
+	return tx.Error
+}
+
+func (g *GormImageDataStore) DeleteByID(imageId uint) error {
+	tx := g.db.Delete(&model.Image{}, imageId)
 	return tx.Error
 }
 

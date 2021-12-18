@@ -106,6 +106,7 @@ func main() {
 	filePath := apiPath.Group("/file")
 	filePath.Post("/", fileHandler.UploadFile)
 	filePath.Get("/", authHandler.AuthenticatedOnly, fileHandler.GetOwnFiles)
+	filePath.Delete("/:fileID", authHandler.AuthenticatedOnly, fileHandler.IsOwnFile, fileHandler.DeleteFile)
 
 	imagePath := apiPath.Group("/image")
 	imagePath.Post("/", imageHandler.UploadImage)

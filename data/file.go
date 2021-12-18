@@ -13,6 +13,7 @@ type FileDataStore interface {
 	FindByToken(token string) (*model.File, error)
 	IncreaseVisited(id string) error
 	FindByUserID(userId uint) (*[]model.File, error)
+	FindByUserIDAndFileID(userId uint, fileId string) (*model.File, error)
 	DeleteByID(fileId string) error
 }
 
@@ -63,6 +64,12 @@ func (store *GormFileDataStore) FindByToken(token string) (*model.File, error) {
 	return file, nil
 }
 
+func (store *GormFileDataStore) FindByUserIDAndFileID(userId uint, fileId string) (*model.File, error) {
+	var file model.File
+	tx := store.db.Where(&model.File{ID: fileId, UserID: userId}).Limit(1).Find(&file)
+	return &file, tx.Error
+}
+
 func (store *GormFileDataStore) FindByUserID(userId uint) (*[]model.File, error) {
 	var files []model.File
 	tx := store.db.Where(&model.File{UserID: userId}).Find(&files)
@@ -70,7 +77,7 @@ func (store *GormFileDataStore) FindByUserID(userId uint) (*[]model.File, error)
 }
 
 func (store *GormFileDataStore) DeleteByID(fileId string) error {
-	tx := store.db.Delete(&model.File{}, fileId)
+	tx := store.db.Delete(&model.File{ID: fileId})
 	return tx.Error
 }
 

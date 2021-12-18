@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
@@ -197,4 +198,50 @@ func (h *FileRoutesHandler) GetOwnFiles(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(files)
+}
+
+func (h *FileRoutesHandler) IsOwnFile(c *fiber.Ctx) error {
+	fileId := c.Params("fileID", "")
+	if len(fileId) == 0 {
+		return NewHTTPError(h.log, fiber.StatusBadRequest, "File ID must be provided", nil)
+	}
+
+	// Get userId
+	user := c.UserContext().Value("user")
+	userModel, ok := user.(*model.User)
+	if !ok {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to parse to user model", fmt.Errorf("user model convertion error"))
+	}
+
+	file, err := h.fileDataStore.FindByUserIDAndFileID(userModel.ID, fileId)
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to find file by id and user id", err)
+	}
+	if file == nil {
+		return NewHTTPError(h.log, fiber.StatusForbidden, "Forbidden", nil)
+	}
+
+	c.SetUserContext(context.WithValue(c.UserContext(), "file", file))
+	return c.Next()
+}
+
+func (h *FileRoutesHandler) DeleteFile(c *fiber.Ctx) error {
+	fileModel, ok := c.UserContext().Value("file").(*model.File)
+	if !ok {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to parse file model", fmt.Errorf("unable to parse file model"))
+	}
+
+	// Delete file record in db
+	err := h.fileDataStore.DeleteByID(fileModel.ID)
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to delete file record in db", err)
+	}
+
+	// Delete file on storage
+	err = h.storageManager.DeleteFile(fileModel.ID)
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to delete file on storage", err)
+	}
+
+	return c.JSON(fileModel)
 }

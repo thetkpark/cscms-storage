@@ -115,6 +115,7 @@ func (m *DiskStorageManager) DeleteFile(fileName string) error {
 
 type ImageStorageManager interface {
 	UploadImage(fileName string, file io.ReadSeekCloser) error
+	DeleteImage(fileName string) error
 }
 
 type AzureImageStorageManager struct {
@@ -137,5 +138,11 @@ func NewAzureImageStorageManager(l hclog.Logger, connectionString string, contai
 func (a *AzureImageStorageManager) UploadImage(fileName string, file io.ReadSeekCloser) error {
 	bbClient := a.containerClient.NewBlockBlobClient(fileName)
 	_, err := bbClient.UploadStreamToBlockBlob(context.Background(), file, azblob.UploadStreamToBlockBlobOptions{})
+	return err
+}
+
+func (a *AzureImageStorageManager) DeleteImage(fileName string) error {
+	bbClient := a.containerClient.NewBlockBlobClient(fileName)
+	_, err := bbClient.Delete(context.Background(), nil)
 	return err
 }

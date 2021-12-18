@@ -6,7 +6,13 @@ const FileDetail = ({ type, file, onRemove }) => {
 		return toTitleCase(file.type.split('/')[0])
 	}
 	const getFileSize = () => {
-		return file.size
+		if(size >= 1E6) {
+			return `${file.size} mb`
+		} else if (size >= 1E3 && size < 1E6) {
+			return `${file.size} kb`
+		} else {
+			return `${file.size} b`
+		}
 	}
 	const getExtension = () => {
 		return file.name.split('.').pop().toUpperCase()

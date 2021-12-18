@@ -1,7 +1,9 @@
 package service
 
 import (
+	"context"
 	"fmt"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 	"github.com/hashicorp/go-hclog"
 	"io"
 	"os"
@@ -109,4 +111,38 @@ func (m *DiskStorageManager) DeleteFile(fileName string) error {
 		return err
 	}
 	return nil
+}
+
+type ImageStorageManager interface {
+	UploadImage(fileName string, file io.ReadSeekCloser) error
+	DeleteImage(fileName string) error
+}
+
+type AzureImageStorageManager struct {
+	log             hclog.Logger
+	containerClient azblob.ContainerClient
+}
+
+func NewAzureImageStorageManager(l hclog.Logger, connectionString string, containerName string) (*AzureImageStorageManager, error) {
+	serviceClient, err := azblob.NewServiceClientFromConnectionString(connectionString, nil)
+	if err != nil {
+		return nil, err
+	}
+	containerClient := serviceClient.NewContainerClient(containerName)
+	return &AzureImageStorageManager{
+		log:             l,
+		containerClient: containerClient,
+	}, nil
+}
+
+func (a *AzureImageStorageManager) UploadImage(fileName string, file io.ReadSeekCloser) error {
+	bbClient := a.containerClient.NewBlockBlobClient(fileName)
+	_, err := bbClient.UploadStreamToBlockBlob(context.Background(), file, azblob.UploadStreamToBlockBlobOptions{})
+	return err
+}
+
+func (a *AzureImageStorageManager) DeleteImage(fileName string) error {
+	bbClient := a.containerClient.NewBlockBlobClient(fileName)
+	_, err := bbClient.Delete(context.Background(), nil)
+	return err
 }

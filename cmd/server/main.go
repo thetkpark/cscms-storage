@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/hashicorp/go-hclog"
+	"github.com/markbates/goth"
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/handlers"
 	"github.com/thetkpark/cscms-temp-storage/service"
@@ -10,18 +11,23 @@ import (
 	"gorm.io/gorm"
 	"log"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	//"github.com/markbates/goth"
+	"github.com/markbates/goth/providers/github"
+	"github.com/markbates/goth/providers/google"
+	"github.com/shareed2k/goth_fiber"
 )
 
 func main() {
 	logger := hclog.Default()
 
-	masterKey, storagePath, port, maxStoreDuration := getEnv()
-	dbHost, dbPort, dbUsername, dbPassword, dbName := getDBEnv()
+	appENVs, err := getAppENVs()
+	if err != nil {
+		log.Fatalln("Failed to get app ENVs", err)
+	}
 
 	app := fiber.New(fiber.Config{
 		BodyLimit: 150 << 20,
@@ -47,86 +53,82 @@ func main() {
 	})
 
 	// Create data store
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbUsername, dbPassword, dbHost, dbPort, dbName)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", appENVs.DB.Username, appENVs.DB.Password, appENVs.DB.Host, appENVs.DB.Port, appENVs.DB.DatabaseName)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalln("unable to open sqlite db", err)
 	}
-	gormFileDataStore, err := data.NewGormFileDataStore(logger, db, maxStoreDuration)
+	gormFileDataStore, err := data.NewGormFileDataStore(logger, db, appENVs.FileStoreMaxDuration)
 	if err != nil {
-		log.Fatalln("unable to run gorm migration", err)
+		log.Fatalln("unable to run gorm migration on file table", err)
+	}
+	gormImageDataStore, err := data.NewGormImageDataStore(logger, db)
+	if err != nil {
+		log.Fatalln("unable to run gorm migration on image table", err)
+	}
+	gormUserDataStore, err := data.NewGormUserDataStore(logger, db)
+	if err != nil {
+		log.Fatalln("unable to run gorm migration on user table", err)
 	}
 
 	// Create service managers for handler
-	sioEncryptionManager := service.NewSIOEncryptionManager(logger, masterKey)
-	diskStorageManager, err := service.NewDiskStorageManager(logger, storagePath)
+	sioEncryptionManager := service.NewSIOEncryptionManager(logger, appENVs.MasterKey)
+	diskStorageManager, err := service.NewDiskStorageManager(logger, appENVs.FileStoragePath)
 	if err != nil {
 		log.Fatalln("unable to create disk storage manager")
 	}
+	imageStorageManager, err := service.NewAzureImageStorageManager(logger, appENVs.AzureBlobStorageConnectionString, appENVs.AzureBlobStorageContainerName)
+	if err != nil {
+		log.Fatalln("unable to azure image storage manager")
+	}
+	jwtManager := service.NewJwtManager(os.Getenv("JWT_SECRET"))
 
 	// Create handlers
-	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager, maxStoreDuration)
+	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager, appENVs.FileStoreMaxDuration)
+	imageHandler := handlers.NewImageRouteHandler(logger, gormImageDataStore, imageStorageManager)
+	authHandler := handlers.NewAuthRouteHandler(logger, gormUserDataStore, jwtManager, appENVs.Entrypoint)
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowMethods: "GET POST",
+		AllowOrigins:     "https://storage.cscms.me, http://localhost:5050",
+		AllowMethods:     "GET POST PATCH DELETE",
+		AllowCredentials: true,
 	}))
 
 	app.Get("/api/ping", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
-			"success":   true,
+			"message":   "pong",
 			"timestamp": time.Now(),
 		})
 	})
 
-	app.Post("/api/file", fileHandler.UploadFile)
+	apiPath := app.Group("/api", authHandler.ParseUserFromCookie)
 
+	filePath := apiPath.Group("/file")
+	filePath.Post("/", fileHandler.UploadFile)
+	filePath.Get("/", authHandler.AuthenticatedOnly, fileHandler.GetOwnFiles)
+
+	imagePath := apiPath.Group("/image")
+	imagePath.Post("/", imageHandler.UploadImage)
+	imagePath.Get("/", authHandler.AuthenticatedOnly, imageHandler.GetOwnImages)
+
+	// User Authentication with Oauth
+	goth.UseProviders(
+		github.New(appENVs.OauthGitHub.ClientSecret, appENVs.OauthGitHub.SecretKey, fmt.Sprintf("%s/auth/github/callback", appENVs.Entrypoint)),
+		google.New(appENVs.OAuthGoogle.ClientSecret, appENVs.OAuthGoogle.SecretKey, fmt.Sprintf("%s/auth/google/callback", appENVs.Entrypoint)))
+
+	authPath := app.Group("/auth")
+	authPath.Get("/logout", authHandler.Logout)
+	authPath.Get("/user", authHandler.ParseUserFromCookie, authHandler.AuthenticatedOnly, authHandler.GetUserInfo)
+	authPath.Get("/:provider", goth_fiber.BeginAuthHandler)
+	authPath.Get("/:provider/callback", authHandler.OauthProviderCallback)
+
+	// Other routes
 	app.Static("/", "./client/build")
 	app.Static("/404", "./client/build")
-
 	app.Get("/:token", fileHandler.GetFile)
 
-	err = app.Listen(port)
+	err = app.Listen(appENVs.Port)
 	if err != nil {
-		log.Fatalf("unable to start server on %s: %v", port, err)
+		log.Fatalf("unable to start server on %s: %v", appENVs.Port, err)
 	}
-}
-
-func getEnv() (string, string, string, time.Duration) {
-	// Required env
-	key := os.Getenv("MASTER_KEY")
-	storagePath := os.Getenv("STORAGE_PATH")
-	if len(key) == 0 || len(storagePath) == 0 {
-		log.Fatalln("MASTER_KEY and STORAGE_PATH env must be defined")
-	}
-
-	// Optional env
-	port := os.Getenv("PORT")
-	if len(port) == 0 {
-		port = fmt.Sprintf(":%d", 5000)
-	} else {
-		port = fmt.Sprintf(":%s", port)
-	}
-
-	maxStoreDuration := os.Getenv("STORE_DURATION") // in days
-	duration := time.Hour * 24 * 30
-	if len(maxStoreDuration) != 0 {
-		date, err := strconv.Atoi(maxStoreDuration)
-		if err != nil {
-			log.Fatalln("STORE_DURATION is not a valid number")
-		}
-		duration = time.Hour * 24 * time.Duration(date)
-	}
-
-	return key, storagePath, port, duration
-}
-
-func getDBEnv() (string, string, string, string, string) {
-	username := os.Getenv("DB_USERNAME")
-	password := os.Getenv("DB_PASSWORD")
-	port := os.Getenv("DB_PORT")
-	host := os.Getenv("DB_HOST")
-	dbname := os.Getenv("DB_DATABASE")
-
-	return host, port, username, password, dbname
 }

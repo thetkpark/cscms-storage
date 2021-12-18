@@ -9,9 +9,11 @@ import (
 )
 
 type FileDataStore interface {
-	Create(id, token, nonce, filename string, filesize uint64, storeDuration time.Duration) (*model.File, error)
+	Create(file *model.File) error
 	FindByToken(token string) (*model.File, error)
 	IncreaseVisited(id string) error
+	FindByUserID(userId uint) (*[]model.File, error)
+	DeleteByID(fileId string) error
 }
 
 type GormFileDataStore struct {
@@ -32,25 +34,9 @@ func NewGormFileDataStore(l hclog.Logger, db *gorm.DB, duration time.Duration) (
 	}, nil
 }
 
-func (store *GormFileDataStore) Create(id, token, nonce, filename string, filesize uint64, storeDuration time.Duration) (*model.File, error) {
-	file := &model.File{
-		ID:        id,
-		Token:     token,
-		Nonce:     nonce,
-		Filename:  filename,
-		FileSize:  filesize,
-		CreatedAt: time.Now().UTC(),
-		UpdatedAt: time.Now().UTC(),
-		ExpiredAt: time.Now().UTC().Add(storeDuration),
-		Visited:   0,
-	}
-
+func (store *GormFileDataStore) Create(file *model.File) error {
 	tx := store.db.Create(file)
-	if tx.Error != nil {
-		store.log.Error("unable to create new file data in db", tx.Error)
-		return nil, tx.Error
-	}
-	return file, nil
+	return tx.Error
 }
 
 func (store *GormFileDataStore) FindByToken(token string) (*model.File, error) {
@@ -75,6 +61,17 @@ func (store *GormFileDataStore) FindByToken(token string) (*model.File, error) {
 		return nil, gorm.ErrRecordNotFound
 	}
 	return file, nil
+}
+
+func (store *GormFileDataStore) FindByUserID(userId uint) (*[]model.File, error) {
+	var files []model.File
+	tx := store.db.Where(&model.File{UserID: userId}).Find(&files)
+	return &files, tx.Error
+}
+
+func (store *GormFileDataStore) DeleteByID(fileId string) error {
+	tx := store.db.Delete(&model.File{}, fileId)
+	return tx.Error
 }
 
 func (store *GormFileDataStore) IncreaseVisited(id string) error {

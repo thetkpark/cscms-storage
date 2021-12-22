@@ -111,6 +111,7 @@ func main() {
 	imagePath := apiPath.Group("/image")
 	imagePath.Post("/", imageHandler.UploadImage)
 	imagePath.Get("/", authHandler.AuthenticatedOnly, imageHandler.GetOwnImages)
+	imagePath.Delete("/:imageID", authHandler.AuthenticatedOnly, imageHandler.IsOwnImage, imageHandler.DeleteImage)
 
 	// User Authentication with Oauth
 	goth.UseProviders(

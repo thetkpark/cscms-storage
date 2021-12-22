@@ -220,6 +220,9 @@ func (h *FileRoutesHandler) IsOwnFile(c *fiber.Ctx) error {
 	if file == nil {
 		return NewHTTPError(h.log, fiber.StatusForbidden, "Forbidden", nil)
 	}
+	if file.ExpiredAt.UTC().Before(time.Now().UTC()) {
+		return NewHTTPError(h.log, fiber.StatusNotFound, "Not Found", nil)
+	}
 
 	c.SetUserContext(context.WithValue(c.UserContext(), "file", file))
 	return c.Next()

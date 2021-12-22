@@ -11,3 +11,8 @@ func NewHTTPError(log hclog.Logger, code int, message string, error error) error
 	}
 	return fiber.NewError(code, message)
 }
+
+type ErrorResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}

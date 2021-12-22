@@ -34,6 +34,17 @@ func NewFileRoutesHandler(log hclog.Logger, enc service.EncryptionManager, data 
 	}
 }
 
+// UploadFile handlers
+// @Summary Upload new file
+// @Description Upload new temporary store file
+// @Tags File
+// @Accept  multipart/form-data
+// @Produce  json
+// @Param       file  formData  file  true  "File"
+// @Success      201  {object}  model.File
+// @Failure      400  {object}  handlers.ErrorResponse
+// @Failure      500  {object}  handlers.ErrorResponse
+// @Router /api/file [post]
 func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
@@ -129,9 +140,18 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to save file info to db", err)
 	}
 
-	return c.JSON(fileInfo)
+	return c.Status(fiber.StatusCreated).JSON(fileInfo)
 }
 
+// GetFile handlers
+// @Summary Download the file
+// @Description Access link to download the file
+// @Tags File
+// @Produce  application/octet-stream
+// @Param        token       path      string      true  "File Token"
+// @Success      200
+// @Failure      500  {object}  handlers.ErrorResponse
+// @Router /{token} [get]
 func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 	token := strings.ToLower(c.Params("token"))
 
@@ -184,6 +204,14 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 	return nil
 }
 
+// GetOwnFiles handlers
+// @Summary List of uploaded file
+// @Description List all the upload file by the user
+// @Tags File
+// @Produce  json
+// @Success      200  {array} model.File
+// @Failure      500  {object}  handlers.ErrorResponse
+// @Router /api/file [get]
 func (h *FileRoutesHandler) GetOwnFiles(c *fiber.Ctx) error {
 	// Get userId
 	user := c.UserContext().Value("user")
@@ -228,6 +256,18 @@ func (h *FileRoutesHandler) IsOwnFile(c *fiber.Ctx) error {
 	return c.Next()
 }
 
+// DeleteFile handlers
+// @Summary Delete the file
+// @Description Delete the active file by ID
+// @Tags File
+// @Produce  json
+// @Param        fileID       path      string      true  "File ID"
+// @Success      200  {object} model.File
+// @Failure      400  {object}  handlers.ErrorResponse
+// @Failure      401  {object}  handlers.ErrorResponse
+// @Failure      403  {object}  handlers.ErrorResponse
+// @Failure      500  {object}  handlers.ErrorResponse
+// @Router /api/file/{fileID} [delete]
 func (h *FileRoutesHandler) DeleteFile(c *fiber.Ctx) error {
 	fileModel, ok := c.UserContext().Value("file").(*model.File)
 	if !ok {
@@ -249,6 +289,19 @@ func (h *FileRoutesHandler) DeleteFile(c *fiber.Ctx) error {
 	return c.JSON(fileModel)
 }
 
+// EditToken handlers
+// @Summary Edit file token
+// @Description Edit the file token/slug
+// @Tags File
+// @Produce  json
+// @Param        fileID       path      string      true  "File ID"
+// @Param        token       query      string      true  "New file token"
+// @Success      200  {object} model.File
+// @Failure      400  {object}  handlers.ErrorResponse
+// @Failure      401  {object}  handlers.ErrorResponse
+// @Failure      403  {object}  handlers.ErrorResponse
+// @Failure      500  {object}  handlers.ErrorResponse
+// @Router /api/file/{fileID} [patch]
 func (h *FileRoutesHandler) EditToken(c *fiber.Ctx) error {
 	fileModel, ok := c.UserContext().Value("file").(*model.File)
 	if !ok {

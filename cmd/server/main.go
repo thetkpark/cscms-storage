@@ -13,13 +13,19 @@ import (
 	"os"
 	"time"
 
+	"github.com/arsmn/fiber-swagger/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	//"github.com/markbates/goth"
 	"github.com/markbates/goth/providers/github"
 	"github.com/markbates/goth/providers/google"
 	"github.com/shareed2k/goth_fiber"
+	_ "github.com/thetkpark/cscms-temp-storage/cmd/server/docs"
 )
+
+// @title CSCMS Storage
+// @version 1.0
+// @description This is a sample server Petstore server.
 
 func main() {
 	logger := hclog.Default()
@@ -128,6 +134,7 @@ func main() {
 	// Other routes
 	app.Static("/", "./client/build")
 	app.Static("/404", "./client/build")
+	app.Get("/swagger/*", swagger.Handler)
 	app.Get("/:token", fileHandler.GetFile)
 
 	err = app.Listen(appENVs.Port)

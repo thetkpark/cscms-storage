@@ -15,6 +15,7 @@ type FileDataStore interface {
 	FindByUserID(userId uint) (*[]model.File, error)
 	FindByUserIDAndFileID(userId uint, fileId string) (*model.File, error)
 	DeleteByID(fileId string) error
+	Save(file *model.File) error
 }
 
 type GormFileDataStore struct {
@@ -93,4 +94,9 @@ func (store *GormFileDataStore) IncreaseVisited(id string) error {
 		return tx.Error
 	}
 	return nil
+}
+
+func (store *GormFileDataStore) Save(file *model.File) error {
+	tx := store.db.Save(file)
+	return tx.Error
 }

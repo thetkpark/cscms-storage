@@ -245,3 +245,31 @@ func (h *FileRoutesHandler) DeleteFile(c *fiber.Ctx) error {
 
 	return c.JSON(fileModel)
 }
+
+func (h *FileRoutesHandler) EditToken(c *fiber.Ctx) error {
+	fileModel, ok := c.UserContext().Value("file").(*model.File)
+	if !ok {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to parse file model", fmt.Errorf("unable to parse file model"))
+	}
+
+	newToken := c.Query("token", "")
+	if len(newToken) == 0 {
+		return NewHTTPError(h.log, fiber.StatusBadRequest, "New Token must be provided", nil)
+	}
+
+	existingFile, err := h.fileDataStore.FindByToken(newToken)
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to query existing file with token", err)
+	}
+	if existingFile != nil {
+		return NewHTTPError(h.log, fiber.StatusBadRequest, "New token is in used", nil)
+	}
+
+	fileModel.Token = newToken
+	err = h.fileDataStore.Save(fileModel)
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to save edited file model", err)
+	}
+
+	return c.JSON(fileModel)
+}

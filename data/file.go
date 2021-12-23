@@ -10,6 +10,7 @@ import (
 
 type FileDataStore interface {
 	Create(file *model.File) error
+	FindByID(fileID string) (*model.File, error)
 	FindByToken(token string) (*model.File, error)
 	IncreaseVisited(id string) error
 	FindByUserID(userId uint) (*[]model.File, error)
@@ -39,6 +40,18 @@ func NewGormFileDataStore(l hclog.Logger, db *gorm.DB, duration time.Duration) (
 func (store *GormFileDataStore) Create(file *model.File) error {
 	tx := store.db.Create(file)
 	return tx.Error
+}
+
+func (store *GormFileDataStore) FindByID(fileID string) (*model.File, error) {
+	var file model.File
+	tx := store.db.Where(&model.File{ID: fileID}).First(&file)
+	if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
+		return nil, nil
+	} else if tx.Error != nil {
+		return nil, tx.Error
+	}
+
+	return &file, nil
 }
 
 func (store *GormFileDataStore) FindByToken(token string) (*model.File, error) {

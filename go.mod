@@ -6,6 +6,7 @@ require (
 	cloud.google.com/go v0.90.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v0.2.0
 	github.com/arsmn/fiber-swagger/v2 v2.20.0
+	github.com/caarlos0/env/v6 v6.8.0
 	github.com/gofiber/fiber/v2 v2.20.2
 	github.com/golang-jwt/jwt v3.2.1+incompatible
 	github.com/hashicorp/go-hclog v0.16.2

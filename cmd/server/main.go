@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/arsmn/fiber-swagger/v2"
+	"github.com/caarlos0/env/v6"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	//"github.com/markbates/goth"
@@ -30,9 +31,9 @@ import (
 func main() {
 	logger := hclog.Default()
 
-	appENVs, err := getAppENVs()
-	if err != nil {
-		log.Fatalln("Failed to get app ENVs", err)
+	appENVs := ApplicationEnvironmentVariable{}
+	if err := env.Parse(&appENVs, env.Options{RequiredIfNoDef: true}); err != nil {
+		log.Fatalln("Failed to get app ENVs: ", err)
 	}
 
 	app := fiber.New(fiber.Config{
@@ -64,7 +65,7 @@ func main() {
 	if err != nil {
 		log.Fatalln("unable to open sqlite db", err)
 	}
-	gormFileDataStore, err := data.NewGormFileDataStore(logger, db, appENVs.FileStoreMaxDuration)
+	gormFileDataStore, err := data.NewGormFileDataStore(logger, db, time.Duration(appENVs.FileStoreMaxDuration)*time.Hour*24)
 	if err != nil {
 		log.Fatalln("unable to run gorm migration on file table", err)
 	}
@@ -90,7 +91,7 @@ func main() {
 	jwtManager := service.NewJwtManager(os.Getenv("JWT_SECRET"))
 
 	// Create handlers
-	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager, appENVs.FileStoreMaxDuration)
+	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager, time.Duration(appENVs.FileStoreMaxDuration)*time.Hour*24)
 	imageHandler := handlers.NewImageRouteHandler(logger, gormImageDataStore, imageStorageManager)
 	authHandler := handlers.NewAuthRouteHandler(logger, gormUserDataStore, jwtManager, appENVs.Entrypoint)
 
@@ -122,8 +123,8 @@ func main() {
 
 	// User Authentication with Oauth
 	goth.UseProviders(
-		github.New(appENVs.OauthGitHub.ClientSecret, appENVs.OauthGitHub.SecretKey, fmt.Sprintf("%s/auth/github/callback", appENVs.Entrypoint)),
-		google.New(appENVs.OAuthGoogle.ClientSecret, appENVs.OAuthGoogle.SecretKey, fmt.Sprintf("%s/auth/google/callback", appENVs.Entrypoint)))
+		github.New(appENVs.OauthGitHubClientSecret, appENVs.OauthGitHubSecretKey, fmt.Sprintf("%s/auth/github/callback", appENVs.Entrypoint)),
+		google.New(appENVs.OAuthGoogleClientSecret, appENVs.OAuthGoogleSecretKey, fmt.Sprintf("%s/auth/google/callback", appENVs.Entrypoint)))
 
 	authPath := app.Group("/auth")
 	authPath.Get("/logout", authHandler.Logout)
@@ -137,7 +138,7 @@ func main() {
 	app.Get("/swagger/*", swagger.Handler)
 	app.Get("/:token", fileHandler.GetFile)
 
-	err = app.Listen(appENVs.Port)
+	err = app.Listen(fmt.Sprintf(":%s", appENVs.Port))
 	if err != nil {
 		log.Fatalf("unable to start server on %s: %v", appENVs.Port, err)
 	}

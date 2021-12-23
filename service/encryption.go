@@ -4,8 +4,8 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
-	"github.com/hashicorp/go-hclog"
 	"github.com/minio/sio"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/hkdf"
 	"io"
 )
@@ -16,11 +16,11 @@ type EncryptionManager interface {
 }
 
 type SIOEncryptionManager struct {
-	log       hclog.Logger
+	log       *zap.SugaredLogger
 	masterKey string
 }
 
-func NewSIOEncryptionManager(l hclog.Logger, key string) *SIOEncryptionManager {
+func NewSIOEncryptionManager(l *zap.SugaredLogger, key string) *SIOEncryptionManager {
 	return &SIOEncryptionManager{
 		log:       l,
 		masterKey: key,
@@ -29,27 +29,27 @@ func NewSIOEncryptionManager(l hclog.Logger, key string) *SIOEncryptionManager {
 
 func (m *SIOEncryptionManager) Encrypt(input io.Reader) (io.Reader, string, error) {
 	// the master key used to derive encryption keys
-	masterkey := []byte(m.masterKey)
+	masterKey := []byte(m.masterKey)
 
 	// generate a random nonce to derive an encryption key from the master key
 	// this nonce must be saved to be able to decrypt the data again
 	var nonce [32]byte
 	if _, err := io.ReadFull(rand.Reader, nonce[:]); err != nil {
-		m.log.Error("Failed to read random data", err)
+		m.log.Errorw("Failed to read random data", "error", err)
 		return nil, "", err
 	}
 
 	// derive an encryption key from the master key and the nonce
 	var key [32]byte
-	kdf := hkdf.New(sha256.New, masterkey, nonce[:], nil)
+	kdf := hkdf.New(sha256.New, masterKey, nonce[:], nil)
 	if _, err := io.ReadFull(kdf, key[:]); err != nil {
-		m.log.Error("Failed to derive encryption key", err)
+		m.log.Errorw("Failed to derive encryption key", "error", err)
 		return nil, "", err
 	}
 
 	encrypted, err := sio.EncryptReader(input, sio.Config{Key: key[:]})
 	if err != nil {
-		m.log.Error("Failed to encrypted reader", err)
+		m.log.Errorw("Failed to encrypted reader", "error", err)
 		return nil, "", err
 	}
 
@@ -58,29 +58,29 @@ func (m *SIOEncryptionManager) Encrypt(input io.Reader) (io.Reader, string, erro
 
 func (m *SIOEncryptionManager) Decrypt(input io.Reader, nonceString string, output io.Writer) error {
 	// the master key used to derive encryption keys
-	masterkey := []byte(m.masterKey)
+	masterKey := []byte(m.masterKey)
 
 	// the nonce used to derive the encryption key
 	nonce, err := hex.DecodeString(nonceString)
 	if err != nil {
-		m.log.Error("Failed to decode hex string to byte", err)
+		m.log.Errorw("Failed to decode hex string to byte", "error", err)
 		return err
 	}
 
 	// derive the encryption key from the master key and the nonce
 	var key [32]byte
-	kdf := hkdf.New(sha256.New, masterkey, nonce, nil)
+	kdf := hkdf.New(sha256.New, masterKey, nonce, nil)
 	if _, err := io.ReadFull(kdf, key[:]); err != nil {
-		m.log.Error("Failed to derive encryption key", err)
+		m.log.Errorw("Failed to derive encryption key", "error", err)
 		return err
 	}
 
 	if _, err := sio.Decrypt(output, input, sio.Config{Key: key[:]}); err != nil {
 		if _, ok := err.(sio.Error); ok {
-			m.log.Error("Malformed encrypted data", err)
+			m.log.Errorw("Malformed encrypted data", "error", err)
 			return err
 		}
-		m.log.Error("Failed to decrypt data", err)
+		m.log.Errorw("Failed to decrypt data", "error", err)
 		return err
 	}
 

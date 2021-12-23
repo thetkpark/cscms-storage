@@ -4,27 +4,44 @@ import Button from '../util/Button'
 import Icon from '../util/Icon'
 import { Slider, TextField } from '@material-ui/core'
 import FileDetail from './FileDetail'
-const UploadContainer = ({ type }) => {
+const UploadContainer = ({ type, handleUpload, setError }) => {
 	const [selectedFile, setSelectedFile] = useState(null)
-	const [error, setError] = useState('')
 	const [duration, setDuration] = useState(7)
 	const [slug, setSlug] = useState('')
 	useEffect(() => {
 		setSelectedFile(null)
-		setError('')
 	}, [type])
 	const onDrop = (acceptedFiles, rejectedFiles) => {
 		if (acceptedFiles.length === 1) {
-			setError('')
+			if(type === 'image') {
+				if(acceptedFiles[0].type.includes('image')) {
+					setSelectedFile(acceptedFiles[0])
+				} else {
+					setError('Please upload an image')
+					return;
+				}
+			}
 			setSelectedFile(acceptedFiles[0])
-			console.log(acceptedFiles[0])
 		} else {
 			if (rejectedFiles[0].errors[0].code === 'too-many-files') {
 				setError('Too many files. You can only upload one file at a time')
 			} else if (rejectedFiles[0].errors[0].code === 'file-too-large') {
 				setError('File too big. The size limit is 100MB')
 			} else setError('File not accepted')
+			return;
 		}
+	}
+	const onClick = e => {
+		e.preventDefault()
+		if (!selectedFile) {
+			setError('Please select a file')
+			return
+		}
+		handleUpload({
+			selectedFile,
+			slug,
+			duration
+		})
 	}
 	return (
 		<div
@@ -53,7 +70,11 @@ const UploadContainer = ({ type }) => {
 					onDrop={onDrop}
 				/>
 				{selectedFile ? (
-					<FileDetail type={type} file={selectedFile} onRemove={() => setSelectedFile(null)} />
+					<FileDetail
+						type={type}
+						file={selectedFile}
+						onRemove={() => setSelectedFile(null)}
+					/>
 				) : null}
 				<Button
 					bgColor={'#E9EEFF'}
@@ -64,6 +85,7 @@ const UploadContainer = ({ type }) => {
 						height: '50px',
 						marginTop: '2rem'
 					}}
+					onClick={onClick}
 				>
 					<Icon name="upload" role="icon" /> Upload
 				</Button>

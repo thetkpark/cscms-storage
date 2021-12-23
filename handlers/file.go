@@ -1,27 +1,28 @@
 package handlers
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
-	"github.com/hashicorp/go-hclog"
 	"github.com/thetkpark/cscms-temp-storage/data"
+	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"github.com/thetkpark/cscms-temp-storage/service"
-	"gorm.io/gorm"
+	"go.uber.org/zap"
+	"io"
 	"strconv"
 	"strings"
 	"time"
 )
 
 type FileRoutesHandler struct {
-	log               hclog.Logger
+	log               *zap.SugaredLogger
 	encryptionManager service.EncryptionManager
 	fileDataStore     data.FileDataStore
 	storageManager    service.StorageManager
 	maxStoreDuration  time.Duration
 }
 
-func NewFileRoutesHandler(log hclog.Logger, enc service.EncryptionManager, data data.FileDataStore, store service.StorageManager, duration time.Duration) *FileRoutesHandler {
+func NewFileRoutesHandler(log *zap.SugaredLogger, enc service.EncryptionManager, data data.FileDataStore, store service.StorageManager, duration time.Duration) *FileRoutesHandler {
 	return &FileRoutesHandler{
 		log:               log,
 		encryptionManager: enc,
@@ -31,38 +32,27 @@ func NewFileRoutesHandler(log hclog.Logger, enc service.EncryptionManager, data 
 	}
 }
 
+// UploadFile handlers
+// @Summary Upload new file
+// @Description Upload new temporary store file
+// @Tags File
+// @Accept  multipart/form-data
+// @Produce  json
+// @Param       file  formData  file  true  "File"
+// @Success      201  {object}  model.File
+// @Failure      400  {object}  handlers.ErrorResponse
+// @Failure      500  {object}  handlers.ErrorResponse
+// @Router /api/file [post]
 func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
-	tStart := time.Now()
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to get file from form-data", err)
 	}
 
-	// Create new fileId
-	fileId, err := service.GenerateFileId()
-	if err != nil {
-		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to create file id", err)
+	// Check image size (100MB)
+	if fileHeader.Size > 100<<20 {
+		return NewHTTPError(h.log, fiber.StatusRequestEntityTooLarge, "File too large", nil)
 	}
-
-	// Open multipart form header
-	file, err := fileHeader.Open()
-	if err != nil {
-		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to open file", err)
-	}
-
-	// Encrypt the file
-	tEncrypt := time.Now()
-	encrypted, nonce, err := h.encryptionManager.Encrypt(file)
-	if err != nil {
-		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable encrypt the file", err)
-	}
-	encryptFileDuration := time.Now().Sub(tEncrypt)
-
-	// Write encrypted file to disk
-	if err := h.storageManager.WriteToNewFile(fileId, encrypted); err != nil {
-		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to write encrypted data to file", err)
-	}
-
 	// Check slug
 	token, err := service.GenerateFileToken()
 	if err != nil {
@@ -71,10 +61,11 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 	fileToken := strings.ToLower(c.Query("slug", token))
 	// Check if slug is available
 	existingFile, err := h.fileDataStore.FindByToken(fileToken)
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to get existing file token", err)
+	}
 	if existingFile != nil {
 		return NewHTTPError(h.log, fiber.StatusBadRequest, fmt.Sprintf("%s slug is used", fileToken), nil)
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to get existing file token", err)
 	}
 
 	// Check store duration (in day)
@@ -90,65 +81,250 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 		storeDuration = time.Duration(day) * time.Hour * 24
 	}
 
-	// Create new fileInfo record in db
-	fileInfo, err := h.fileDataStore.Create(fileId, fileToken, nonce, fileHeader.Filename, uint64(fileHeader.Size), storeDuration)
+	// Generate new file ID
+	fileId, err := service.GenerateFileId()
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to create file id", err)
+	}
+
+	// Create new fileInfo struct
+	fileInfo := &model.File{
+		ID:        fileId,
+		Token:     fileToken,
+		Nonce:     "",
+		Filename:  fileHeader.Filename,
+		FileSize:  uint64(fileHeader.Size),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		ExpiredAt: time.Now().UTC().Add(storeDuration),
+		Visited:   0,
+		UserID:    0,
+		FileType:  fileHeader.Header.Get("Content-Type"),
+		Encrypted: false,
+	}
+
+	// Get userId if exist
+	user := c.UserContext().Value("user")
+	if user != nil {
+		userModel, ok := user.(*model.User)
+		if !ok {
+			return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to parse to user model", fmt.Errorf("user model convertion error"))
+		}
+		fileInfo.UserID = userModel.ID
+		fileInfo.Encrypted = true
+	}
+
+	// Open file from multipart form header
+	var file io.Reader
+	file, err = fileHeader.Open()
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to open file", err)
+	}
+
+	if fileInfo.Encrypted {
+		// Encrypt the file
+		file, fileInfo.Nonce, err = h.encryptionManager.Encrypt(file)
+		if err != nil {
+			return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable encrypt the file", err)
+		}
+	}
+
+	// Write file content to disk
+	if err := h.storageManager.WriteToNewFile(fileId, file); err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to write encrypted data to file", err)
+	}
+
+	err = h.fileDataStore.Create(fileInfo)
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to save file info to db", err)
 	}
 
-	return c.JSON(fiber.Map{
-		"id":           fileInfo.ID,
-		"token":        fileInfo.Token,
-		"file_size":    fileInfo.FileSize,
-		"file_name":    fileInfo.Filename,
-		"created_at":   fileInfo.CreatedAt,
-		"expired_at":   fileInfo.ExpiredAt,
-		"encrypt_time": encryptFileDuration.String(),
-		"total_time":   time.Since(tStart).String(),
-	})
+	return c.Status(fiber.StatusCreated).JSON(fileInfo)
 }
 
+// GetFile handlers
+// @Summary Download the file
+// @Description Access link to download the file
+// @Tags File
+// @Produce  application/octet-stream
+// @Param        token       path      string      true  "File Token"
+// @Success      200
+// @Failure      500  {object}  handlers.ErrorResponse
+// @Router /{token} [get]
 func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 	token := strings.ToLower(c.Params("token"))
 
 	// Find file by token
-	file, err := h.fileDataStore.FindByToken(token)
+	fileInfo, err := h.fileDataStore.FindByToken(token)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return c.Redirect(c.BaseURL())
-		}
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to get file query", err)
+	}
+	if fileInfo == nil {
+		return c.Redirect(c.BaseURL() + "/404")
 	}
 
 	// Check if file still exist on storage
-	if exist, err := h.storageManager.Exist(file.ID); !exist {
+	if exist, err := h.storageManager.Exist(fileInfo.ID); !exist {
 		if err == nil {
 			// File is not exist anymore
-			return c.Redirect(c.BaseURL())
+			return c.Redirect(c.BaseURL() + "/404")
 		}
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to check if file exist", err)
 	}
 
 	// Get encrypted file from storage manager
-	encryptedFile, err := h.storageManager.OpenFile(file.ID)
+	file, err := h.storageManager.OpenFile(fileInfo.ID)
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to open encrypted file", err)
 	}
 
-	// Decrypt file
-	err = h.encryptionManager.Decrypt(encryptedFile, file.Nonce, c)
-	if err != nil {
-		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to decrypt", err)
+	if fileInfo.Encrypted {
+		// Decrypt file if encrypted
+		err = h.encryptionManager.Decrypt(file, fileInfo.Nonce, c)
+		if err != nil {
+			return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to decrypt", err)
+		}
+	} else {
+		// Copy file content to response
+		if _, err := io.Copy(c, file); err != nil {
+			return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to copy file content to response", err)
+		}
 	}
 
 	// Increase visited count
-	err = h.fileDataStore.IncreaseVisited(file.ID)
+	err = h.fileDataStore.IncreaseVisited(fileInfo.ID)
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to increase count", err)
 	}
 
-	c.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, file.Filename))
+	c.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, fileInfo.Filename))
 	c.Set("Content-Type", "application/octet-stream")
 
 	return nil
+}
+
+// GetOwnFiles handlers
+// @Summary List of uploaded file
+// @Description List all the upload file by the user
+// @Tags File
+// @Produce  json
+// @Success      200  {array} model.File
+// @Failure      500  {object}  handlers.ErrorResponse
+// @Router /api/file [get]
+func (h *FileRoutesHandler) GetOwnFiles(c *fiber.Ctx) error {
+	// Get userId
+	user := c.UserContext().Value("user")
+	userModel, ok := user.(*model.User)
+	if !ok {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to parse to user model", fmt.Errorf("user model convertion error"))
+	}
+
+	files, err := h.fileDataStore.FindByUserID(userModel.ID)
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "Unable to find files by user ID", err)
+	}
+
+	return c.JSON(files)
+}
+
+func (h *FileRoutesHandler) IsOwnFile(c *fiber.Ctx) error {
+	fileId := c.Params("fileID", "")
+	if len(fileId) == 0 {
+		return NewHTTPError(h.log, fiber.StatusBadRequest, "File ID must be provided", nil)
+	}
+
+	// Get userId
+	user := c.UserContext().Value("user")
+	userModel, ok := user.(*model.User)
+	if !ok {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to parse to user model", fmt.Errorf("user model convertion error"))
+	}
+
+	file, err := h.fileDataStore.FindByUserIDAndFileID(userModel.ID, fileId)
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to find file by id and user id", err)
+	}
+	if file == nil {
+		return NewHTTPError(h.log, fiber.StatusForbidden, "Forbidden", nil)
+	}
+	if file.ExpiredAt.UTC().Before(time.Now().UTC()) {
+		return NewHTTPError(h.log, fiber.StatusNotFound, "Not Found", nil)
+	}
+
+	c.SetUserContext(context.WithValue(c.UserContext(), "file", file))
+	return c.Next()
+}
+
+// DeleteFile handlers
+// @Summary Delete the file
+// @Description Delete the active file by ID
+// @Tags File
+// @Produce  json
+// @Param        fileID       path      string      true  "File ID"
+// @Success      200  {object} model.File
+// @Failure      400  {object}  handlers.ErrorResponse
+// @Failure      401  {object}  handlers.ErrorResponse
+// @Failure      403  {object}  handlers.ErrorResponse
+// @Failure      500  {object}  handlers.ErrorResponse
+// @Router /api/file/{fileID} [delete]
+func (h *FileRoutesHandler) DeleteFile(c *fiber.Ctx) error {
+	fileModel, ok := c.UserContext().Value("file").(*model.File)
+	if !ok {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to parse file model", fmt.Errorf("unable to parse file model"))
+	}
+
+	// Delete file record in db
+	err := h.fileDataStore.DeleteByID(fileModel.ID)
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to delete file record in db", err)
+	}
+
+	// Delete file on storage
+	err = h.storageManager.DeleteFile(fileModel.ID)
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to delete file on storage", err)
+	}
+
+	return c.JSON(fileModel)
+}
+
+// EditToken handlers
+// @Summary Edit file token
+// @Description Edit the file token/slug
+// @Tags File
+// @Produce  json
+// @Param        fileID       path      string      true  "File ID"
+// @Param        token       query      string      true  "New file token"
+// @Success      200  {object} model.File
+// @Failure      400  {object}  handlers.ErrorResponse
+// @Failure      401  {object}  handlers.ErrorResponse
+// @Failure      403  {object}  handlers.ErrorResponse
+// @Failure      500  {object}  handlers.ErrorResponse
+// @Router /api/file/{fileID} [patch]
+func (h *FileRoutesHandler) EditToken(c *fiber.Ctx) error {
+	fileModel, ok := c.UserContext().Value("file").(*model.File)
+	if !ok {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to parse file model", fmt.Errorf("unable to parse file model"))
+	}
+
+	newToken := c.Query("token", "")
+	if len(newToken) == 0 {
+		return NewHTTPError(h.log, fiber.StatusBadRequest, "New Token must be provided", nil)
+	}
+
+	existingFile, err := h.fileDataStore.FindByToken(newToken)
+	if existingFile != nil {
+		return NewHTTPError(h.log, fiber.StatusBadRequest, "New token is in used", nil)
+	}
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to query existing file with token", err)
+	}
+
+	fileModel.Token = newToken
+	err = h.fileDataStore.Save(fileModel)
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to save edited file model", err)
+	}
+
+	return c.JSON(fileModel)
 }

@@ -62,9 +62,34 @@ definitions:
       user_id:
         type: integer
     type: object
+  model.User:
+    properties:
+      avatar_url:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      files:
+        items:
+          $ref: '#/definitions/model.File'
+        type: array
+      id:
+        type: integer
+      images:
+        items:
+          $ref: '#/definitions/model.Image'
+        type: array
+      provider:
+        type: string
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
 info:
   contact: {}
-  description: This is a sample server Petstore server.
+  description: This is documentation for CSCMS Storage API
   title: CSCMS Storage
   version: "1.0"
 paths:
@@ -300,4 +325,28 @@ paths:
       summary: Delete image
       tags:
       - Image
+  /auth/logout:
+    get:
+      description: Clear the cookie
+      responses:
+        "200":
+          description: ""
+      summary: Logout
+      tags:
+      - Auth
+  /auth/user:
+    get:
+      description: Get the user information
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.User'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get user info
+      tags:
+      - Auth
 swagger: "2.0"

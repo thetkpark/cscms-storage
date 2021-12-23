@@ -25,7 +25,7 @@ import (
 
 // @title CSCMS Storage
 // @version 1.0
-// @description This is a sample server Petstore server.
+// @description This is documentation for CSCMS Storage API
 
 func main() {
 	logger := hclog.Default()

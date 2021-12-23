@@ -13,13 +13,19 @@ import (
 	"os"
 	"time"
 
+	"github.com/arsmn/fiber-swagger/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	//"github.com/markbates/goth"
 	"github.com/markbates/goth/providers/github"
 	"github.com/markbates/goth/providers/google"
 	"github.com/shareed2k/goth_fiber"
+	_ "github.com/thetkpark/cscms-temp-storage/cmd/server/docs"
 )
+
+// @title CSCMS Storage
+// @version 1.0
+// @description This is documentation for CSCMS Storage API
 
 func main() {
 	logger := hclog.Default()
@@ -106,10 +112,13 @@ func main() {
 	filePath := apiPath.Group("/file")
 	filePath.Post("/", fileHandler.UploadFile)
 	filePath.Get("/", authHandler.AuthenticatedOnly, fileHandler.GetOwnFiles)
+	filePath.Patch("/:fileID", authHandler.AuthenticatedOnly, fileHandler.IsOwnFile, fileHandler.EditToken)
+	filePath.Delete("/:fileID", authHandler.AuthenticatedOnly, fileHandler.IsOwnFile, fileHandler.DeleteFile)
 
 	imagePath := apiPath.Group("/image")
 	imagePath.Post("/", imageHandler.UploadImage)
 	imagePath.Get("/", authHandler.AuthenticatedOnly, imageHandler.GetOwnImages)
+	imagePath.Delete("/:imageID", authHandler.AuthenticatedOnly, imageHandler.IsOwnImage, imageHandler.DeleteImage)
 
 	// User Authentication with Oauth
 	goth.UseProviders(
@@ -125,6 +134,7 @@ func main() {
 	// Other routes
 	app.Static("/", "./client/build")
 	app.Static("/404", "./client/build")
+	app.Get("/swagger/*", swagger.Handler)
 	app.Get("/:token", fileHandler.GetFile)
 
 	err = app.Listen(appENVs.Port)

@@ -14,7 +14,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: thetkpark/cscms-temp-storage
+          images: thetkpark/cscms-storage
           tags: |
             type=raw,value=latest
             type=sha,format=long,prefix=
@@ -35,5 +35,5 @@ jobs:
         with:
           url: https://api.github.com/repos/thetkpark/cscms-services-deployment/dispatches
           method: POST
-          data: '{"event_type": "temp-storage-v2"}'
+          data: '{"event_type": "cscms-storage"}'
           username: ${{secrets.ACCESS_TOKEN}}

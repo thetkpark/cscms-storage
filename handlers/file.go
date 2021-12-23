@@ -2,14 +2,12 @@ package handlers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-hclog"
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"github.com/thetkpark/cscms-temp-storage/service"
-	"gorm.io/gorm"
 	"io"
 	"strconv"
 	"strings"
@@ -63,10 +61,11 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 	fileToken := strings.ToLower(c.Query("slug", token))
 	// Check if slug is available
 	existingFile, err := h.fileDataStore.FindByToken(fileToken)
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to get existing file token", err)
+	}
 	if existingFile != nil {
 		return NewHTTPError(h.log, fiber.StatusBadRequest, fmt.Sprintf("%s slug is used", fileToken), nil)
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to get existing file token", err)
 	}
 
 	// Check store duration (in day)
@@ -158,10 +157,10 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 	// Find file by token
 	fileInfo, err := h.fileDataStore.FindByToken(token)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return c.Redirect(c.BaseURL() + "/404")
-		}
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to get file query", err)
+	}
+	if fileInfo == nil {
+		return c.Redirect(c.BaseURL() + "/404")
 	}
 
 	// Check if file still exist on storage
@@ -314,11 +313,11 @@ func (h *FileRoutesHandler) EditToken(c *fiber.Ctx) error {
 	}
 
 	existingFile, err := h.fileDataStore.FindByToken(newToken)
-	if err != nil {
-		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to query existing file with token", err)
-	}
 	if existingFile != nil {
 		return NewHTTPError(h.log, fiber.StatusBadRequest, "New token is in used", nil)
+	}
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to query existing file with token", err)
 	}
 
 	fileModel.Token = newToken

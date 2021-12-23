@@ -43,11 +43,7 @@ func (store *GormFileDataStore) Create(file *model.File) error {
 
 func (store *GormFileDataStore) FindByToken(token string) (*model.File, error) {
 	var files []*model.File
-	tx := store.db.Where(&model.File{Token: token}).Find(&files)
-	if tx.Error != nil {
-		if !errors.Is(tx.Error, gorm.ErrRecordNotFound) {
-			store.log.Error("error querying file by token")
-		}
+	if tx := store.db.Where(&model.File{Token: token}).Find(&files); tx.Error != nil {
 		return nil, tx.Error
 	}
 
@@ -60,7 +56,7 @@ func (store *GormFileDataStore) FindByToken(token string) (*model.File, error) {
 	}
 
 	if file == nil {
-		return nil, gorm.ErrRecordNotFound
+		return nil, nil
 	}
 	return file, nil
 }

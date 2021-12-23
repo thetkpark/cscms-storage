@@ -27,6 +27,18 @@ func NewImageRouteHandler(log hclog.Logger, imgDataStore data.ImageDataStore, st
 	}
 }
 
+// UploadImage handlers
+// @Summary Upload new image
+// @Description Upload new image
+// @Tags Image
+// @Accept  multipart/form-data
+// @Produce  json
+// @Param       image  formData  file  true  "Image"
+// @Success      201  {object}  model.Image
+// @Failure      400  {object}  handlers.ErrorResponse
+// @Failure      413  {object}  handlers.ErrorResponse
+// @Failure      500  {object}  handlers.ErrorResponse
+// @Router /api/image [post]
 func (h *ImageRouteHandler) UploadImage(c *fiber.Ctx) error {
 	// Get image file from Form
 	fileHeader, err := c.FormFile("image")
@@ -86,9 +98,18 @@ func (h *ImageRouteHandler) UploadImage(c *fiber.Ctx) error {
 	}
 
 	// Return the image info
-	return c.JSON(imageInfo)
+	return c.Status(fiber.StatusCreated).JSON(imageInfo)
 }
 
+// GetOwnImages handlers
+// @Summary List uploaded images
+// @Description List uploaded images from the user
+// @Tags Image
+// @Produce  json
+// @Success      200  {array}  model.Image
+// @Failure      400  {object}  handlers.ErrorResponse
+// @Failure      500  {object}  handlers.ErrorResponse
+// @Router /api/image [get]
 func (h *ImageRouteHandler) GetOwnImages(c *fiber.Ctx) error {
 	// Get userId
 	user := c.UserContext().Value("user")
@@ -134,6 +155,18 @@ func (h *ImageRouteHandler) IsOwnImage(c *fiber.Ctx) error {
 	return c.Next()
 }
 
+// DeleteImage handlers
+// @Summary Delete image
+// @Description Delete uploaded image from the user
+// @Tags Image
+// @Produce  json
+// @Param        imageID       path      int      true  "Image ID"
+// @Success      200  {object}  model.Image
+// @Failure      400  {object}  handlers.ErrorResponse
+// @Failure      401  {object}  handlers.ErrorResponse
+// @Failure      403  {object}  handlers.ErrorResponse
+// @Failure      500  {object}  handlers.ErrorResponse
+// @Router /api/image/{imageID} [delete]
 func (h *ImageRouteHandler) DeleteImage(c *fiber.Ctx) error {
 	image, ok := c.UserContext().Value("image").(*model.Image)
 	if !ok {

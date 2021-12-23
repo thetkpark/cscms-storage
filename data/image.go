@@ -1,7 +1,7 @@
 package data
 
 import (
-	"github.com/hashicorp/go-hclog"
+	"errors"
 	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"gorm.io/gorm"
 )
@@ -9,21 +9,20 @@ import (
 type ImageDataStore interface {
 	Create(image *model.Image) error
 	FindByUserID(userID uint) (*[]model.Image, error)
+	FindByImageIDAndUserID(imageID uint, userID uint) (*model.Image, error)
 	DeleteByID(imageId uint) error
 }
 
 type GormImageDataStore struct {
-	log hclog.Logger
-	db  *gorm.DB
+	db *gorm.DB
 }
 
-func NewGormImageDataStore(l hclog.Logger, db *gorm.DB) (*GormImageDataStore, error) {
+func NewGormImageDataStore(db *gorm.DB) (*GormImageDataStore, error) {
 	if err := db.AutoMigrate(&model.Image{}); err != nil {
 		return nil, err
 	}
 	return &GormImageDataStore{
-		log: l,
-		db:  db,
+		db: db,
 	}, nil
 }
 
@@ -41,4 +40,13 @@ func (g *GormImageDataStore) FindByUserID(userID uint) (*[]model.Image, error) {
 	var images []model.Image
 	tx := g.db.Where(&model.Image{UserID: userID}).Find(&images)
 	return &images, tx.Error
+}
+
+func (g *GormImageDataStore) FindByImageIDAndUserID(imageID uint, userID uint) (*model.Image, error) {
+	var image model.Image
+	tx := g.db.Where(&model.Image{UserID: userID, ID: imageID}).First(&image)
+	if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return &image, tx.Error
 }

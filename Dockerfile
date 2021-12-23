@@ -8,6 +8,8 @@ RUN yarn build
 
 
 FROM golang:alpine as server-builder
+ENV GOOS=linux
+ENV GOARCH=amd64
 RUN apk add build-base
 WORKDIR /app
 COPY ./go.mod ./

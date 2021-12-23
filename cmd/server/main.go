@@ -2,32 +2,44 @@ package main
 
 import (
 	"fmt"
-	"github.com/hashicorp/go-hclog"
 	"github.com/markbates/goth"
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/handlers"
 	"github.com/thetkpark/cscms-temp-storage/service"
+	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
 	"os"
 	"time"
 
+	"github.com/arsmn/fiber-swagger/v2"
+	"github.com/caarlos0/env/v6"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	//"github.com/markbates/goth"
 	"github.com/markbates/goth/providers/github"
 	"github.com/markbates/goth/providers/google"
 	"github.com/shareed2k/goth_fiber"
+	_ "github.com/thetkpark/cscms-temp-storage/cmd/server/docs"
 )
 
+// @title CSCMS Storage
+// @version 1.0
+// @description This is documentation for CSCMS Storage API
 func main() {
-	logger := hclog.Default()
+	//logger := hclog.Default()
 
-	appENVs, err := getAppENVs()
-	if err != nil {
-		log.Fatalln("Failed to get app ENVs", err)
+	appENVs := ApplicationEnvironmentVariable{}
+	if err := env.Parse(&appENVs, env.Options{RequiredIfNoDef: true}); err != nil {
+		log.Fatalln("Failed to get app ENVs: ", err)
 	}
+
+	zapLogger, _ := zap.NewProduction()
+	if appENVs.Env == "development" {
+		zapLogger, _ = zap.NewDevelopment()
+	}
+	defer zapLogger.Sync()
+	logger := zapLogger.Sugar()
 
 	app := fiber.New(fiber.Config{
 		BodyLimit: 150 << 20,
@@ -56,35 +68,35 @@ func main() {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", appENVs.DB.Username, appENVs.DB.Password, appENVs.DB.Host, appENVs.DB.Port, appENVs.DB.DatabaseName)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatalln("unable to open sqlite db", err)
+		logger.Fatalw("unable to open sqlite db", "error", err)
 	}
-	gormFileDataStore, err := data.NewGormFileDataStore(logger, db, appENVs.FileStoreMaxDuration)
+	gormFileDataStore, err := data.NewGormFileDataStore(db, time.Duration(appENVs.FileStoreMaxDuration)*time.Hour*24)
 	if err != nil {
-		log.Fatalln("unable to run gorm migration on file table", err)
+		logger.Fatalw("unable to run gorm migration on file table", "error", err)
 	}
-	gormImageDataStore, err := data.NewGormImageDataStore(logger, db)
+	gormImageDataStore, err := data.NewGormImageDataStore(db)
 	if err != nil {
-		log.Fatalln("unable to run gorm migration on image table", err)
+		logger.Fatalw("unable to run gorm migration on image table", "error", err)
 	}
-	gormUserDataStore, err := data.NewGormUserDataStore(logger, db)
+	gormUserDataStore, err := data.NewGormUserDataStore(db)
 	if err != nil {
-		log.Fatalln("unable to run gorm migration on user table", err)
+		logger.Fatalw("unable to run gorm migration on user table", "error", err)
 	}
 
 	// Create service managers for handler
 	sioEncryptionManager := service.NewSIOEncryptionManager(logger, appENVs.MasterKey)
 	diskStorageManager, err := service.NewDiskStorageManager(logger, appENVs.FileStoragePath)
 	if err != nil {
-		log.Fatalln("unable to create disk storage manager")
+		logger.Fatalw("unable to create disk storage manager", "error", err)
 	}
 	imageStorageManager, err := service.NewAzureImageStorageManager(logger, appENVs.AzureBlobStorageConnectionString, appENVs.AzureBlobStorageContainerName)
 	if err != nil {
-		log.Fatalln("unable to azure image storage manager")
+		logger.Fatalw("unable to azure image storage manager", "error", err)
 	}
 	jwtManager := service.NewJwtManager(os.Getenv("JWT_SECRET"))
 
 	// Create handlers
-	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager, appENVs.FileStoreMaxDuration)
+	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager, time.Duration(appENVs.FileStoreMaxDuration)*time.Hour*24)
 	imageHandler := handlers.NewImageRouteHandler(logger, gormImageDataStore, imageStorageManager)
 	authHandler := handlers.NewAuthRouteHandler(logger, gormUserDataStore, jwtManager, appENVs.Entrypoint)
 
@@ -106,15 +118,18 @@ func main() {
 	filePath := apiPath.Group("/file")
 	filePath.Post("/", fileHandler.UploadFile)
 	filePath.Get("/", authHandler.AuthenticatedOnly, fileHandler.GetOwnFiles)
+	filePath.Patch("/:fileID", authHandler.AuthenticatedOnly, fileHandler.IsOwnFile, fileHandler.EditToken)
+	filePath.Delete("/:fileID", authHandler.AuthenticatedOnly, fileHandler.IsOwnFile, fileHandler.DeleteFile)
 
 	imagePath := apiPath.Group("/image")
 	imagePath.Post("/", imageHandler.UploadImage)
 	imagePath.Get("/", authHandler.AuthenticatedOnly, imageHandler.GetOwnImages)
+	imagePath.Delete("/:imageID", authHandler.AuthenticatedOnly, imageHandler.IsOwnImage, imageHandler.DeleteImage)
 
 	// User Authentication with Oauth
 	goth.UseProviders(
-		github.New(appENVs.OauthGitHub.ClientSecret, appENVs.OauthGitHub.SecretKey, fmt.Sprintf("%s/auth/github/callback", appENVs.Entrypoint)),
-		google.New(appENVs.OAuthGoogle.ClientSecret, appENVs.OAuthGoogle.SecretKey, fmt.Sprintf("%s/auth/google/callback", appENVs.Entrypoint)))
+		github.New(appENVs.OauthGitHubClientSecret, appENVs.OauthGitHubSecretKey, fmt.Sprintf("%s/auth/github/callback", appENVs.Entrypoint)),
+		google.New(appENVs.OAuthGoogleClientSecret, appENVs.OAuthGoogleSecretKey, fmt.Sprintf("%s/auth/google/callback", appENVs.Entrypoint)))
 
 	authPath := app.Group("/auth")
 	authPath.Get("/logout", authHandler.Logout)
@@ -125,10 +140,35 @@ func main() {
 	// Other routes
 	app.Static("/", "./client/build")
 	app.Static("/404", "./client/build")
+	app.Get("/swagger/*", swagger.Handler)
 	app.Get("/:token", fileHandler.GetFile)
 
-	err = app.Listen(appENVs.Port)
+	err = app.Listen(fmt.Sprintf(":%s", appENVs.Port))
 	if err != nil {
-		log.Fatalf("unable to start server on %s: %v", appENVs.Port, err)
+		logger.Fatalw(fmt.Sprintf("unable to start server on %s", appENVs.Port), "error", err)
 	}
+}
+
+type ApplicationEnvironmentVariable struct {
+	MasterKey                        string `env:"MASTER_KEY"`
+	FileStoragePath                  string `env:"STORAGE_PATH"`
+	FileStoreMaxDuration             int    `env:"STORE_DURATION" envDefault:"30"`
+	AzureBlobStorageConnectionString string `env:"AZSTORAGE_CONNECTION_STRING"`
+	AzureBlobStorageContainerName    string `env:"AZSTORAGE_CONTAINER_NAME"`
+	Port                             string `env:"PORT"`
+	DB                               DatabaseEnvironmentVariable
+	OauthGitHubClientSecret          string `env:"GITHUB_OAUTH_CLIENT_ID"`
+	OauthGitHubSecretKey             string `env:"GITHUB_OAUTH_SECRET_KEY"`
+	OAuthGoogleClientSecret          string `env:"GOOGLE_OAUTH_CLIENT_ID"`
+	OAuthGoogleSecretKey             string `env:"GOOGLE_OAUTH_SECRET_KEY"`
+	Entrypoint                       string `env:"ENTRYPOINT"`
+	Env                              string `env:"ENV" envDefault:"development"`
+}
+
+type DatabaseEnvironmentVariable struct {
+	Username     string `env:"DB_USERNAME"`
+	Password     string `env:"DB_PASSWORD"`
+	Host         string `env:"DB_HOST"`
+	Port         string `env:"DB_PORT"`
+	DatabaseName string `env:"DB_DATABASE"`
 }

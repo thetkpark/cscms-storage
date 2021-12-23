@@ -3,10 +3,10 @@ package handlers
 import (
 	"context"
 	"github.com/gofiber/fiber/v2"
-	"github.com/hashicorp/go-hclog"
 	"github.com/shareed2k/goth_fiber"
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/service"
+	"go.uber.org/zap"
 	"regexp"
 	"strconv"
 	"strings"
@@ -14,13 +14,13 @@ import (
 )
 
 type AuthRouteHandler struct {
-	log           hclog.Logger
+	log           *zap.SugaredLogger
 	userDataStore data.UserDataStore
 	jwtManager    *service.JwtManager
 	entrypoint    string
 }
 
-func NewAuthRouteHandler(l hclog.Logger, userDataStore data.UserDataStore, jwtManager *service.JwtManager, entry string) *AuthRouteHandler {
+func NewAuthRouteHandler(l *zap.SugaredLogger, userDataStore data.UserDataStore, jwtManager *service.JwtManager, entry string) *AuthRouteHandler {
 	return &AuthRouteHandler{
 		log:           l,
 		userDataStore: userDataStore,
@@ -79,6 +79,13 @@ func (a AuthRouteHandler) OauthProviderCallback(c *fiber.Ctx) error {
 	return c.Redirect(a.entrypoint)
 }
 
+// GetUserInfo handlers
+// @Summary Get user info
+// @Description Get the user information
+// @Tags Auth
+// @Success  200 {object} model.User
+// @Failure  401 {object}  handlers.ErrorResponse
+// @Router /auth/user [get]
 func (a *AuthRouteHandler) GetUserInfo(c *fiber.Ctx) error {
 	user := c.UserContext().Value("user")
 	if user == nil {
@@ -87,6 +94,12 @@ func (a *AuthRouteHandler) GetUserInfo(c *fiber.Ctx) error {
 	return c.JSON(user)
 }
 
+// Logout handlers
+// @Summary Logout
+// @Description Clear the cookie
+// @Tags Auth
+// @Success  200
+// @Router /auth/logout [get]
 func (a *AuthRouteHandler) Logout(c *fiber.Ctx) error {
 	a.clearCookie(c)
 	return c.SendStatus(fiber.StatusOK)

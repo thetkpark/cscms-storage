@@ -2,7 +2,6 @@ package data
 
 import (
 	"errors"
-	"github.com/hashicorp/go-hclog"
 	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"gorm.io/gorm"
 	"time"
@@ -20,18 +19,16 @@ type FileDataStore interface {
 }
 
 type GormFileDataStore struct {
-	log              hclog.Logger
 	db               *gorm.DB
 	maxStoreDuration time.Duration
 }
 
-func NewGormFileDataStore(l hclog.Logger, db *gorm.DB, duration time.Duration) (*GormFileDataStore, error) {
+func NewGormFileDataStore(db *gorm.DB, duration time.Duration) (*GormFileDataStore, error) {
 	if err := db.AutoMigrate(&model.File{}); err != nil {
 		return nil, err
 	}
 
 	return &GormFileDataStore{
-		log:              l,
 		db:               db,
 		maxStoreDuration: duration,
 	}, nil

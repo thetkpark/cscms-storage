@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
-	"github.com/hashicorp/go-hclog"
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"github.com/thetkpark/cscms-temp-storage/service"
+	"go.uber.org/zap"
 	"io"
 	"strconv"
 	"strings"
@@ -15,14 +15,14 @@ import (
 )
 
 type FileRoutesHandler struct {
-	log               hclog.Logger
+	log               *zap.SugaredLogger
 	encryptionManager service.EncryptionManager
 	fileDataStore     data.FileDataStore
 	storageManager    service.StorageManager
 	maxStoreDuration  time.Duration
 }
 
-func NewFileRoutesHandler(log hclog.Logger, enc service.EncryptionManager, data data.FileDataStore, store service.StorageManager, duration time.Duration) *FileRoutesHandler {
+func NewFileRoutesHandler(log *zap.SugaredLogger, enc service.EncryptionManager, data data.FileDataStore, store service.StorageManager, duration time.Duration) *FileRoutesHandler {
 	return &FileRoutesHandler{
 		log:               log,
 		encryptionManager: enc,

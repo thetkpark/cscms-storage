@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/hashicorp/go-hclog"
 	"github.com/markbates/goth"
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/handlers"
 	"github.com/thetkpark/cscms-temp-storage/service"
+	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
@@ -27,12 +27,19 @@ import (
 // @version 1.0
 // @description This is documentation for CSCMS Storage API
 func main() {
-	logger := hclog.Default()
+	//logger := hclog.Default()
 
 	appENVs := ApplicationEnvironmentVariable{}
 	if err := env.Parse(&appENVs, env.Options{RequiredIfNoDef: true}); err != nil {
 		log.Fatalln("Failed to get app ENVs: ", err)
 	}
+
+	zapLogger, _ := zap.NewProduction()
+	if appENVs.Env == "development" {
+		zapLogger, _ = zap.NewDevelopment()
+	}
+	defer zapLogger.Sync()
+	logger := zapLogger.Sugar()
 
 	app := fiber.New(fiber.Config{
 		BodyLimit: 150 << 20,
@@ -61,30 +68,30 @@ func main() {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", appENVs.DB.Username, appENVs.DB.Password, appENVs.DB.Host, appENVs.DB.Port, appENVs.DB.DatabaseName)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatalln("unable to open sqlite db", err)
+		logger.Fatalw("unable to open sqlite db", "error", err)
 	}
-	gormFileDataStore, err := data.NewGormFileDataStore(logger, db, time.Duration(appENVs.FileStoreMaxDuration)*time.Hour*24)
+	gormFileDataStore, err := data.NewGormFileDataStore(db, time.Duration(appENVs.FileStoreMaxDuration)*time.Hour*24)
 	if err != nil {
-		log.Fatalln("unable to run gorm migration on file table", err)
+		logger.Fatalw("unable to run gorm migration on file table", "error", err)
 	}
-	gormImageDataStore, err := data.NewGormImageDataStore(logger, db)
+	gormImageDataStore, err := data.NewGormImageDataStore(db)
 	if err != nil {
-		log.Fatalln("unable to run gorm migration on image table", err)
+		logger.Fatalw("unable to run gorm migration on image table", "error", err)
 	}
-	gormUserDataStore, err := data.NewGormUserDataStore(logger, db)
+	gormUserDataStore, err := data.NewGormUserDataStore(db)
 	if err != nil {
-		log.Fatalln("unable to run gorm migration on user table", err)
+		logger.Fatalw("unable to run gorm migration on user table", "error", err)
 	}
 
 	// Create service managers for handler
 	sioEncryptionManager := service.NewSIOEncryptionManager(logger, appENVs.MasterKey)
 	diskStorageManager, err := service.NewDiskStorageManager(logger, appENVs.FileStoragePath)
 	if err != nil {
-		log.Fatalln("unable to create disk storage manager")
+		logger.Fatalw("unable to create disk storage manager", "error", err)
 	}
 	imageStorageManager, err := service.NewAzureImageStorageManager(logger, appENVs.AzureBlobStorageConnectionString, appENVs.AzureBlobStorageContainerName)
 	if err != nil {
-		log.Fatalln("unable to azure image storage manager")
+		logger.Fatalw("unable to azure image storage manager", "error", err)
 	}
 	jwtManager := service.NewJwtManager(os.Getenv("JWT_SECRET"))
 
@@ -138,7 +145,7 @@ func main() {
 
 	err = app.Listen(fmt.Sprintf(":%s", appENVs.Port))
 	if err != nil {
-		log.Fatalf("unable to start server on %s: %v", appENVs.Port, err)
+		logger.Fatalw(fmt.Sprintf("unable to start server on %s", appENVs.Port), "error", err)
 	}
 }
 
@@ -155,6 +162,7 @@ type ApplicationEnvironmentVariable struct {
 	OAuthGoogleClientSecret          string `env:"GOOGLE_OAUTH_CLIENT_ID"`
 	OAuthGoogleSecretKey             string `env:"GOOGLE_OAUTH_SECRET_KEY"`
 	Entrypoint                       string `env:"ENTRYPOINT"`
+	Env                              string `env:"ENV" envDefault:"development"`
 }
 
 type DatabaseEnvironmentVariable struct {

@@ -8,10 +8,14 @@ import { Dialog } from '@material-ui/core'
 import UploadContainer from './components/upload/UploadContainer'
 import { useRecoilState } from 'recoil'
 import { authState } from './store/auth'
+import axios from 'axios'
+import Swal from 'sweetalert2'
 function App() {
 	const [route, setRoute] = useState('file')
 	const [auth, setAuth] = useRecoilState(authState)
 	const [dialog, setDialog] = useState(null)
+	const [progress, setProgress] = useState(0)
+	const [error, setError] = useState(null)
 	useEffect(() => {
 		ReactGA.initialize('G-S7NPY62JTS')
 		ReactGA.pageview(window.location.pathname)
@@ -21,6 +25,18 @@ function App() {
 			setDialog(null)
 		}
 	}, [auth])
+
+	useEffect(() => {
+		if (error != null) {
+			Swal.fire({
+				title: 'An error occured',
+				text: error,
+				icon: 'error',
+				confirmButtonText: 'Ok'
+			})
+			setError(null)
+		}
+	}, [error])
 
 	const handleAction = action => {
 		switch (action) {
@@ -41,11 +57,71 @@ function App() {
 		if (newRoute === route) return
 		setRoute(newRoute)
 	}
+	const handleUpload = data => {
+		if (route === 'file') {
+			handleUploadFile(data)
+		} else if (route === 'image') {
+			handleUploadImage(data)
+		}
+	}
+	const handleUploadFile = async ({ selectedFile, slug, duration }) => {
+		const formdata = new FormData()
+		formdata.append('file', selectedFile)
+
+		try {
+			// setShowModal(true)
+			const res = await axios.post('/api/file', formdata, {
+				onUploadProgress: progressEvent => {
+					const uploadPercent = Math.round(
+						(progressEvent.loaded / progressEvent.total) * 100
+					)
+					setProgress(uploadPercent)
+				},
+				params: { slug, duration }
+			})
+			// setFileData(res.data)
+
+			ReactGA.event({
+				category: 'file',
+				action: 'Upload file',
+				value: selectedFile.size
+			})
+		} catch (err) {
+			setError(err.response.data.message)
+		}
+	}
+	const handleUploadImage = async ({ selectedFile }) => {
+		const formdata = new FormData()
+		formdata.append('image', selectedFile)
+
+		try {
+			// setShowModal(true)
+			const res = await axios.post('/api/image', formdata, {
+				onUploadProgress: progressEvent => {
+					const uploadPercent = Math.round(
+						(progressEvent.loaded / progressEvent.total) * 100
+					)
+					setProgress(uploadPercent)
+				}
+			})
+			// setFileData(res.data)
+
+			ReactGA.event({
+				category: 'file',
+				action: 'Upload file',
+				value: selectedFile.size
+			})
+		} catch (err) {
+			setError(err.response.data.message)
+		}
+	}
 	const renderScreen = () => {
 		switch (route) {
 			case 'file':
 			case 'image':
-				return <UploadContainer type={route} />
+				return (
+					<UploadContainer type={route} handleUpload={handleUpload} setError={setError} />
+				)
 			case 'myfile':
 				if (auth) return <Fragment></Fragment>
 				setRoute('file')

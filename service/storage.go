@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
-	"github.com/hashicorp/go-hclog"
+	"go.uber.org/zap"
 	"io"
 	"os"
 )
@@ -18,21 +18,21 @@ type StorageManager interface {
 }
 
 type DiskStorageManager struct {
-	log  hclog.Logger
+	log  *zap.SugaredLogger
 	path string
 }
 
-func NewDiskStorageManager(log hclog.Logger, path string) (*DiskStorageManager, error) {
+func NewDiskStorageManager(log *zap.SugaredLogger, path string) (*DiskStorageManager, error) {
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		err = os.MkdirAll(path, 0755)
 		if err != nil {
-			log.Error("cannot create directory for file storage", err)
+			log.Errorw("cannot create directory for file storage", "error", err)
 			return nil, err
 		}
 	}
 	if err != nil {
-		log.Error("cannot check exist directory", err)
+		log.Errorw("cannot check exist directory", "error", err)
 		return nil, err
 	}
 
@@ -46,7 +46,7 @@ func (m *DiskStorageManager) getFilePath(fileName string) string {
 func (m *DiskStorageManager) OpenFile(fileName string) (io.Reader, error) {
 	file, err := os.Open(m.getFilePath(fileName))
 	if err != nil {
-		m.log.Error("cannot open file on disk", err)
+		m.log.Errorw("cannot open file on disk", "error", err)
 		return nil, err
 	}
 	return file, nil
@@ -55,22 +55,22 @@ func (m *DiskStorageManager) OpenFile(fileName string) (io.Reader, error) {
 func (m *DiskStorageManager) WriteToNewFile(fileName string, reader io.Reader) error {
 	file, err := os.Create(m.getFilePath(fileName))
 	if err != nil {
-		m.log.Error("cannot create new file on disk", err)
+		m.log.Errorw("cannot create new file on disk", "error", err)
 		return err
 	}
 
 	if _, err = io.Copy(file, reader); err != nil {
-		m.log.Error("unable to write data to file", err)
+		m.log.Errorw("unable to write data to file", "error", err)
 		return err
 	}
 
 	// Clean up the file
 	if err := file.Sync(); err != nil {
-		m.log.Error("unable sync the file to disk", err)
+		m.log.Errorw("unable sync the file to disk", "error", err)
 		return err
 	}
 	if err := file.Close(); err != nil {
-		m.log.Error("unable close the file", err)
+		m.log.Errorw("unable close the file", "error", err)
 		return err
 	}
 
@@ -82,7 +82,7 @@ func (m *DiskStorageManager) Exist(fileName string) (bool, error) {
 		if os.IsNotExist(err) {
 			return false, nil
 		}
-		m.log.Error("unable to check if file exist", err)
+		m.log.Errorw("unable to check if file exist", "error", err)
 		return false, err
 	}
 	return true, nil
@@ -91,14 +91,14 @@ func (m *DiskStorageManager) Exist(fileName string) (bool, error) {
 func (m *DiskStorageManager) ListFiles() ([]string, error) {
 	dir, err := os.Open(m.path)
 	if err != nil {
-		m.log.Error("unable to open storage directory", err)
+		m.log.Errorw("unable to open storage directory", "error", err)
 		return nil, err
 	}
 	defer dir.Close()
 
 	files, err := dir.Readdirnames(0)
 	if err != nil {
-		m.log.Error("unable to read file name in storage directory", err)
+		m.log.Errorw("unable to read file name in storage directory", "error", err)
 		return nil, err
 	}
 
@@ -107,7 +107,7 @@ func (m *DiskStorageManager) ListFiles() ([]string, error) {
 
 func (m *DiskStorageManager) DeleteFile(fileName string) error {
 	if err := os.Remove(m.getFilePath(fileName)); err != nil {
-		m.log.Error(fmt.Sprintf("unable to delete file %s", fileName), err)
+		m.log.Errorw(fmt.Sprintf("unable to delete file %s", fileName), "error", err)
 		return err
 	}
 	return nil
@@ -119,13 +119,14 @@ type ImageStorageManager interface {
 }
 
 type AzureImageStorageManager struct {
-	log             hclog.Logger
+	log             *zap.SugaredLogger
 	containerClient azblob.ContainerClient
 }
 
-func NewAzureImageStorageManager(l hclog.Logger, connectionString string, containerName string) (*AzureImageStorageManager, error) {
+func NewAzureImageStorageManager(l *zap.SugaredLogger, connectionString string, containerName string) (*AzureImageStorageManager, error) {
 	serviceClient, err := azblob.NewServiceClientFromConnectionString(connectionString, nil)
 	if err != nil {
+		l.Errorw("Unable to create azblob service client", "error", err)
 		return nil, err
 	}
 	containerClient := serviceClient.NewContainerClient(containerName)
@@ -138,11 +139,17 @@ func NewAzureImageStorageManager(l hclog.Logger, connectionString string, contai
 func (a *AzureImageStorageManager) UploadImage(fileName string, file io.ReadSeekCloser) error {
 	bbClient := a.containerClient.NewBlockBlobClient(fileName)
 	_, err := bbClient.UploadStreamToBlockBlob(context.Background(), file, azblob.UploadStreamToBlockBlobOptions{})
+	if err != nil {
+		a.log.Errorw("Failed to upload file to az blob", "error", err)
+	}
 	return err
 }
 
 func (a *AzureImageStorageManager) DeleteImage(fileName string) error {
 	bbClient := a.containerClient.NewBlockBlobClient(fileName)
 	_, err := bbClient.Delete(context.Background(), nil)
+	if err != nil {
+		a.log.Errorw("Failed to delete file on az blob", "error", err)
+	}
 	return err
 }

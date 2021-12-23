@@ -4,22 +4,22 @@ import (
 	"context"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
-	"github.com/hashicorp/go-hclog"
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"github.com/thetkpark/cscms-temp-storage/service"
+	"go.uber.org/zap"
 	"regexp"
 	"strconv"
 	"time"
 )
 
 type ImageRouteHandler struct {
-	log               hclog.Logger
+	log               *zap.SugaredLogger
 	imageDataStore    data.ImageDataStore
 	imageStoreManager service.ImageStorageManager
 }
 
-func NewImageRouteHandler(log hclog.Logger, imgDataStore data.ImageDataStore, store service.ImageStorageManager) *ImageRouteHandler {
+func NewImageRouteHandler(log *zap.SugaredLogger, imgDataStore data.ImageDataStore, store service.ImageStorageManager) *ImageRouteHandler {
 	return &ImageRouteHandler{
 		log:               log,
 		imageDataStore:    imgDataStore,

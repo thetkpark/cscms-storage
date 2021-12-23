@@ -3,44 +3,53 @@ package main
 import (
 	"fmt"
 	"github.com/caarlos0/env/v6"
-	"github.com/hashicorp/go-hclog"
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/service"
+	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"log"
 	"os"
 	"time"
 )
 
 func main() {
-	logger := hclog.Default()
 
 	// Get ENV
 	appENVs := ApplicationEnvironmentVariable{}
 	if err := env.Parse(&appENVs, env.Options{RequiredIfNoDef: true}); err != nil {
-		logger.Error("Unable to get env", "error", err.Error())
-		os.Exit(1)
+		log.Fatalf("Unable to get env: %v", err.Error())
 	}
+
+	zapLogger, _ := zap.NewProduction()
+	if appENVs.Env == "development" {
+		zapLogger, _ = zap.NewDevelopment()
+	}
+	defer zapLogger.Sync()
+	logger := zapLogger.Sugar()
 
 	// Open data store
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", appENVs.DB.Username, appENVs.DB.Password, appENVs.DB.Host, appENVs.DB.Port, appENVs.DB.DatabaseName)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		logger.Errorw("unable to open connection to db", "error", err.Error())
+	}
 
 	// Create disk storage manager
 	diskStorageManager, err := service.NewDiskStorageManager(logger, appENVs.FileStoragePath)
 	if err != nil {
-		logger.Error("unable to create disk storage manager", "error", err.Error())
+		logger.Errorw("unable to create disk storage manager", "error", err.Error())
 		os.Exit(1)
 	}
 	// Create file data store
-	fileDataStore, err := data.NewGormFileDataStore(logger, db, time.Duration(appENVs.FileStoreMaxDuration)*time.Hour*24)
+	fileDataStore, err := data.NewGormFileDataStore(db, time.Duration(appENVs.FileStoreMaxDuration)*time.Hour*24)
 	if err != nil {
-		logger.Error("unable to create file data store", "error", err.Error())
+		logger.Errorw("unable to create file data store", "error", err.Error())
 	}
 
 	fileLists, err := diskStorageManager.ListFiles()
 	if err != nil {
-		logger.Error("unable to list file", "error", err.Error())
+		logger.Errorw("unable to list file", "error", err.Error())
 		os.Exit(1)
 	}
 
@@ -51,7 +60,7 @@ func main() {
 		fileInfo, err := fileDataStore.FindByID(fileName)
 		if err != nil {
 			isError = true
-			logger.Error("Unable to query by file id", "error", err.Error())
+			logger.Errorw("Unable to query by file id", "error", err.Error())
 			continue
 		}
 
@@ -79,6 +88,7 @@ func main() {
 type ApplicationEnvironmentVariable struct {
 	FileStoragePath      string `env:"STORAGE_PATH"`
 	FileStoreMaxDuration int    `env:"STORE_DURATION" envDefault:"30"`
+	Env                  string `env:"ENV" envDefault:"development"`
 	DB                   DatabaseEnvironmentVariable
 }
 

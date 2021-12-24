@@ -65,7 +65,7 @@ func (a AuthRouteHandler) OauthProviderCallback(c *fiber.Ctx) error {
 		Name:     "token",
 		Value:    token,
 		Expires:  time.Now().Add(30 * 24 * time.Hour),
-		Secure:   false,
+		Secure:   true,
 		HTTPOnly: true,
 		SameSite: "lax",
 	})

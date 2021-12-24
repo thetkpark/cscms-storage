@@ -19,6 +19,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/csrf"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/markbates/goth/providers/github"
 	"github.com/markbates/goth/providers/google"
 	"github.com/shareed2k/goth_fiber"
@@ -102,6 +103,10 @@ func main() {
 	imageHandler := handlers.NewImageRouteHandler(logger, gormImageDataStore, imageStorageManager)
 	authHandler := handlers.NewAuthRouteHandler(logger, gormUserDataStore, jwtManager, appENVs.Entrypoint)
 
+	app.Use(limiter.New(limiter.Config{
+		Expiration: time.Second * 5,
+		Max:        10,
+	}))
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     "https://storage.cscms.me, http://localhost:5050",
 		AllowMethods:     "GET POST PATCH DELETE",

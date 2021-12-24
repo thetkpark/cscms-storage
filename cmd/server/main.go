@@ -44,6 +44,13 @@ func main() {
 	defer zapLogger.Sync()
 	logger := zapLogger.Sugar()
 
+	// Create file in /tmp for livenessProbe
+	livenessProbeFilePath := "/tmp/cscms-storage-healthy"
+	if _, err := os.Create(livenessProbeFilePath); err != nil {
+		logger.Fatalw("Unable to create livenessProbe file", "error", err)
+	}
+	defer os.Remove(livenessProbeFilePath)
+
 	app := fiber.New(fiber.Config{
 		BodyLimit: 150 << 20,
 		ErrorHandler: func(c *fiber.Ctx, err error) error {

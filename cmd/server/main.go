@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 	"log"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/arsmn/fiber-swagger/v2"
@@ -143,8 +144,16 @@ func main() {
 	app.Get("/swagger/*", swagger.Handler)
 	app.Get("/:token", fileHandler.GetFile)
 
-	err = app.Listen(fmt.Sprintf(":%s", appENVs.Port))
-	if err != nil {
+	// Graceful Shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, os.Kill)
+	go func() {
+		_ = <-sigChan
+		logger.Info("Gracefully shutting down...")
+		_ = app.Shutdown()
+	}()
+
+	if err := app.Listen(fmt.Sprintf(":%s", appENVs.Port)); err != nil {
 		logger.Fatalw(fmt.Sprintf("unable to start server on %s", appENVs.Port), "error", err)
 	}
 }

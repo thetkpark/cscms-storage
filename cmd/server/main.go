@@ -18,6 +18,7 @@ import (
 	"github.com/caarlos0/env/v6"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/csrf"
 	"github.com/markbates/goth/providers/github"
 	"github.com/markbates/goth/providers/google"
 	"github.com/shareed2k/goth_fiber"
@@ -106,6 +107,7 @@ func main() {
 		AllowMethods:     "GET POST PATCH DELETE",
 		AllowCredentials: true,
 	}))
+	app.Use(csrf.New(csrf.Config{}))
 
 	app.Get("/api/ping", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{

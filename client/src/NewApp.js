@@ -10,6 +10,8 @@ import { useRecoilState } from 'recoil'
 import { authState } from './store/auth'
 import axios from 'axios'
 import Swal from 'sweetalert2'
+import Icon from './components/util/Icon'
+import UserProfile from './components/auth/UserProfile'
 function App() {
 	const [route, setRoute] = useState('file')
 	const [auth, setAuth] = useRecoilState(authState)
@@ -21,7 +23,7 @@ function App() {
 		ReactGA.pageview(window.location.pathname)
 	}, [])
 	useEffect(() => {
-		if (auth) {
+		if (auth.isAuthenticated) {
 			setDialog(null)
 		}
 	}, [auth])
@@ -123,7 +125,7 @@ function App() {
 					<UploadContainer type={route} handleUpload={handleUpload} setError={setError} />
 				)
 			case 'myfile':
-				if (auth) return <Fragment></Fragment>
+				if (auth.isAuthenticated) return <Fragment></Fragment>
 				setRoute('file')
 				break
 			default:
@@ -134,18 +136,16 @@ function App() {
 	return (
 		<div className={styles.App}>
 			<div className={styles.Wrapper}>
-				<Navbar auth={auth} handleAction={handleAction} />
+				<Navbar auth={auth.isAuthenticated} handleAction={handleAction} />
 				<div style={{ padding: '2rem 8rem', display: 'flex', flexDirection: 'column' }}>
-					{auth ? (
-						<Fragment>
-							<div>Hey Wagyu!</div>
-						</Fragment>
+					{auth.isAuthenticated ? (
+						<UserProfile user={auth.user} handleChangeRoute={handleChangeRoute} />
 					) : null}
 
 					{renderScreen()}
 				</div>
 				<Sidebar currentRoute={route} handleChangeRoute={handleChangeRoute} />
-				{!auth && dialog ? (
+				{!auth.isAuthenticated && dialog ? (
 					<Dialog open={dialog !== null} onClose={() => setDialog(null)}>
 						<AuthForm mode={dialog} changeMode={mode => setDialog(mode)} />
 					</Dialog>

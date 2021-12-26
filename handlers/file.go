@@ -21,15 +21,17 @@ type FileRoutesHandler struct {
 	encryptionManager encrypt.Manager
 	fileDataStore     data.FileDataStore
 	storageManager    storage.FileManager
+	tokenManager      token.Manager
 	maxStoreDuration  time.Duration
 }
 
-func NewFileRoutesHandler(log *zap.SugaredLogger, enc encrypt.Manager, data data.FileDataStore, store storage.FileManager, duration time.Duration) *FileRoutesHandler {
+func NewFileRoutesHandler(log *zap.SugaredLogger, enc encrypt.Manager, data data.FileDataStore, store storage.FileManager, token token.Manager, duration time.Duration) *FileRoutesHandler {
 	return &FileRoutesHandler{
 		log:               log,
 		encryptionManager: enc,
 		fileDataStore:     data,
 		storageManager:    store,
+		tokenManager:      token,
 		maxStoreDuration:  duration,
 	}
 }
@@ -56,11 +58,11 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 		return NewHTTPError(h.log, fiber.StatusRequestEntityTooLarge, "File too large", nil)
 	}
 	// Check slug
-	token, err := token.GenerateFileToken()
+	t, err := h.tokenManager.GenerateFileToken()
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to generate file token", err)
 	}
-	fileToken := strings.ToLower(c.Query("slug", token))
+	fileToken := strings.ToLower(c.Query("slug", t))
 	// Check if slug is available
 	existingFile, err := h.fileDataStore.FindByToken(fileToken)
 	if err != nil {
@@ -84,7 +86,7 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 	}
 
 	// Generate new file ID
-	fileId, err := token.GenerateFileId()
+	fileId, err := h.tokenManager.GenerateFileID()
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to create file id", err)
 	}
@@ -154,10 +156,10 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 // @Failure      500  {object}  handlers.ErrorResponse
 // @Router /{token} [get]
 func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
-	token := strings.ToLower(c.Params("token"))
+	t := strings.ToLower(c.Params("token"))
 
 	// Find file by token
-	fileInfo, err := h.fileDataStore.FindByToken(token)
+	fileInfo, err := h.fileDataStore.FindByToken(t)
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to get file query", err)
 	}

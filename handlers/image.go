@@ -18,13 +18,15 @@ type ImageRouteHandler struct {
 	log               *zap.SugaredLogger
 	imageDataStore    data.ImageDataStore
 	imageStoreManager storage.ImageManager
+	tokenManager      token.Manager
 }
 
-func NewImageRouteHandler(log *zap.SugaredLogger, imgDataStore data.ImageDataStore, store storage.ImageManager) *ImageRouteHandler {
+func NewImageRouteHandler(log *zap.SugaredLogger, imgDataStore data.ImageDataStore, store storage.ImageManager, token token.Manager) *ImageRouteHandler {
 	return &ImageRouteHandler{
 		log:               log,
 		imageDataStore:    imgDataStore,
 		imageStoreManager: store,
+		tokenManager:      token,
 	}
 }
 
@@ -56,7 +58,7 @@ func (h *ImageRouteHandler) UploadImage(c *fiber.Ctx) error {
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusBadRequest, "Invalid file extension", err)
 	}
-	imageToken, err := token.GenerateImageToken()
+	imageToken, err := h.tokenManager.GenerateImageToken()
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusBadRequest, "Unable to generate image token", err)
 	}

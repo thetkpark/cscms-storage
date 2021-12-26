@@ -8,6 +8,7 @@ import (
 	"github.com/thetkpark/cscms-temp-storage/service/encrypt"
 	"github.com/thetkpark/cscms-temp-storage/service/jwt"
 	"github.com/thetkpark/cscms-temp-storage/service/storage"
+	"github.com/thetkpark/cscms-temp-storage/service/token"
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -106,10 +107,11 @@ func main() {
 		logger.Fatalw("unable to azure image storage manager", "error", err)
 	}
 	jwtManager := jwt.NewJWTManager(appENVs.JWTSecret)
+	tokenManager := token.NewNanoIDTokenManager()
 
 	// Create handlers
-	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager, time.Duration(appENVs.FileStoreMaxDuration)*time.Hour*24)
-	imageHandler := handlers.NewImageRouteHandler(logger, gormImageDataStore, imageStorageManager)
+	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager, tokenManager, time.Duration(appENVs.FileStoreMaxDuration)*time.Hour*24)
+	imageHandler := handlers.NewImageRouteHandler(logger, gormImageDataStore, imageStorageManager, tokenManager)
 	authHandler := handlers.NewAuthRouteHandler(logger, gormUserDataStore, jwtManager, appENVs.Entrypoint)
 
 	app.Use(limiter.New(limiter.Config{

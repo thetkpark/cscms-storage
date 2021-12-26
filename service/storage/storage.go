@@ -1,4 +1,4 @@
-package service
+package storage
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-type StorageManager interface {
+type FileManager interface {
 	OpenFile(fileName string) (io.Reader, error)
 	WriteToNewFile(fileName string, reader io.Reader) error
 	Exist(fileName string) (bool, error)
@@ -113,7 +113,7 @@ func (m *DiskStorageManager) DeleteFile(fileName string) error {
 	return nil
 }
 
-type ImageStorageManager interface {
+type ImageManager interface {
 	UploadImage(fileName string, file io.ReadSeekCloser) error
 	DeleteImage(fileName string) error
 }

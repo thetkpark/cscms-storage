@@ -6,7 +6,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/data/model"
-	"github.com/thetkpark/cscms-temp-storage/service"
+	"github.com/thetkpark/cscms-temp-storage/service/encrypt"
+	"github.com/thetkpark/cscms-temp-storage/service/storage"
+	"github.com/thetkpark/cscms-temp-storage/service/token"
 	"go.uber.org/zap"
 	"io"
 	"strconv"
@@ -16,13 +18,13 @@ import (
 
 type FileRoutesHandler struct {
 	log               *zap.SugaredLogger
-	encryptionManager service.EncryptionManager
+	encryptionManager encrypt.Manager
 	fileDataStore     data.FileDataStore
-	storageManager    service.StorageManager
+	storageManager    storage.FileManager
 	maxStoreDuration  time.Duration
 }
 
-func NewFileRoutesHandler(log *zap.SugaredLogger, enc service.EncryptionManager, data data.FileDataStore, store service.StorageManager, duration time.Duration) *FileRoutesHandler {
+func NewFileRoutesHandler(log *zap.SugaredLogger, enc encrypt.Manager, data data.FileDataStore, store storage.FileManager, duration time.Duration) *FileRoutesHandler {
 	return &FileRoutesHandler{
 		log:               log,
 		encryptionManager: enc,
@@ -54,7 +56,7 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 		return NewHTTPError(h.log, fiber.StatusRequestEntityTooLarge, "File too large", nil)
 	}
 	// Check slug
-	token, err := service.GenerateFileToken()
+	token, err := token.GenerateFileToken()
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to generate file token", err)
 	}
@@ -82,7 +84,7 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 	}
 
 	// Generate new file ID
-	fileId, err := service.GenerateFileId()
+	fileId, err := token.GenerateFileId()
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to create file id", err)
 	}

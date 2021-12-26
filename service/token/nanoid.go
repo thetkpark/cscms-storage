@@ -4,12 +4,6 @@ import (
 	"github.com/matoous/go-nanoid/v2"
 )
 
-type Manager interface {
-	GenerateFileToken() (string, error)
-	GenerateFileID() (string, error)
-	GenerateImageToken() (string, error)
-}
-
 type NanoIDTokenManager struct{}
 
 func NewNanoIDTokenManager() *NanoIDTokenManager {

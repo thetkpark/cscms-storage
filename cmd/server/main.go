@@ -5,7 +5,9 @@ import (
 	"github.com/markbates/goth"
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/handlers"
-	"github.com/thetkpark/cscms-temp-storage/service"
+	"github.com/thetkpark/cscms-temp-storage/service/encrypt"
+	"github.com/thetkpark/cscms-temp-storage/service/jwt"
+	"github.com/thetkpark/cscms-temp-storage/service/storage"
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -94,16 +96,16 @@ func main() {
 	}
 
 	// Create service managers for handler
-	sioEncryptionManager := service.NewSIOEncryptionManager(logger, appENVs.MasterKey)
-	diskStorageManager, err := service.NewDiskStorageManager(logger, appENVs.FileStoragePath)
+	sioEncryptionManager := encrypt.NewSIOEncryptionManager(logger, appENVs.MasterKey)
+	diskStorageManager, err := storage.NewDiskStorageManager(logger, appENVs.FileStoragePath)
 	if err != nil {
 		logger.Fatalw("unable to create disk storage manager", "error", err)
 	}
-	imageStorageManager, err := service.NewAzureImageStorageManager(logger, appENVs.AzureBlobStorageConnectionString, appENVs.AzureBlobStorageContainerName)
+	imageStorageManager, err := storage.NewAzureImageStorageManager(logger, appENVs.AzureBlobStorageConnectionString, appENVs.AzureBlobStorageContainerName)
 	if err != nil {
 		logger.Fatalw("unable to azure image storage manager", "error", err)
 	}
-	jwtManager := service.NewJwtManager(os.Getenv("JWT_SECRET"))
+	jwtManager := jwt.NewJWTManager(appENVs.JWTSecret)
 
 	// Create handlers
 	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager, time.Duration(appENVs.FileStoreMaxDuration)*time.Hour*24)
@@ -186,6 +188,7 @@ type ApplicationEnvironmentVariable struct {
 	OAuthGoogleSecretKey             string `env:"GOOGLE_OAUTH_SECRET_KEY"`
 	Entrypoint                       string `env:"ENTRYPOINT"`
 	Env                              string `env:"ENV" envDefault:"development"`
+	JWTSecret                        string `env:"JWT_SECRET"`
 }
 
 type DatabaseEnvironmentVariable struct {

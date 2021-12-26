@@ -5,7 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/shareed2k/goth_fiber"
 	"github.com/thetkpark/cscms-temp-storage/data"
-	"github.com/thetkpark/cscms-temp-storage/service"
+	"github.com/thetkpark/cscms-temp-storage/service/jwt"
 	"go.uber.org/zap"
 	"regexp"
 	"strconv"
@@ -16,11 +16,11 @@ import (
 type AuthRouteHandler struct {
 	log           *zap.SugaredLogger
 	userDataStore data.UserDataStore
-	jwtManager    *service.JwtManager
+	jwtManager    jwt.Manager
 	entrypoint    string
 }
 
-func NewAuthRouteHandler(l *zap.SugaredLogger, userDataStore data.UserDataStore, jwtManager *service.JwtManager, entry string) *AuthRouteHandler {
+func NewAuthRouteHandler(l *zap.SugaredLogger, userDataStore data.UserDataStore, jwtManager jwt.Manager, entry string) *AuthRouteHandler {
 	return &AuthRouteHandler{
 		log:           l,
 		userDataStore: userDataStore,
@@ -54,7 +54,7 @@ func (a AuthRouteHandler) OauthProviderCallback(c *fiber.Ctx) error {
 	}
 
 	// Create JWT
-	token, err := a.jwtManager.GenerateUserJWT(strconv.Itoa(int(user.ID)))
+	token, err := a.jwtManager.Generate(strconv.Itoa(int(user.ID)))
 	if err != nil {
 		a.log.Error("unable to generate JWT\n" + err.Error())
 		return c.Redirect(a.entrypoint)
@@ -111,7 +111,7 @@ func (a *AuthRouteHandler) ParseUserFromCookie(c *fiber.Ctx) error {
 		return c.Next()
 	}
 
-	userIdString, err := a.jwtManager.ValidateUserJWT(token)
+	userIdString, err := a.jwtManager.Validate(token)
 	if err != nil {
 		a.clearCookie(c)
 		return c.Next()

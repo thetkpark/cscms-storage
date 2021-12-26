@@ -1,4 +1,4 @@
-package service
+package jwt
 
 import (
 	"fmt"
@@ -6,25 +6,30 @@ import (
 	"time"
 )
 
-type JwtManager struct {
+type Manager interface {
+	Generate(userID string) (string, error)
+	Validate(tokenString string) (string, error)
+}
+
+type JWTManager struct {
 	secret []byte
 }
 
-func NewJwtManager(secret string) *JwtManager {
-	return &JwtManager{secret: []byte(secret)}
+func NewJWTManager(secret string) *JWTManager {
+	return &JWTManager{secret: []byte(secret)}
 }
 
-func (j *JwtManager) GenerateUserJWT(userId string) (string, error) {
+func (j *JWTManager) Generate(userID string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.StandardClaims{
 		ExpiresAt: time.Now().Add(30 * 24 * time.Hour).Unix(),
 		IssuedAt:  time.Now().Unix(),
-		Subject:   userId,
+		Subject:   userID,
 	})
 
 	return token.SignedString(j.secret)
 }
 
-func (j *JwtManager) ValidateUserJWT(tokenString string) (string, error) {
+func (j *JWTManager) Validate(tokenString string) (string, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
 		// Validate the signing algorithm
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

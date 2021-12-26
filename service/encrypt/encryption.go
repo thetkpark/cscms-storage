@@ -1,4 +1,4 @@
-package service
+package encrypt
 
 import (
 	"crypto/rand"
@@ -10,7 +10,7 @@ import (
 	"io"
 )
 
-type EncryptionManager interface {
+type Manager interface {
 	Encrypt(input io.Reader) (io.Reader, string, error)
 	Decrypt(input io.Reader, nonceString string, output io.Writer) error
 }

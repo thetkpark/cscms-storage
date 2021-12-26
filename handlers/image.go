@@ -6,7 +6,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/data/model"
-	"github.com/thetkpark/cscms-temp-storage/service"
+	"github.com/thetkpark/cscms-temp-storage/service/storage"
+	"github.com/thetkpark/cscms-temp-storage/service/token"
 	"go.uber.org/zap"
 	"regexp"
 	"strconv"
@@ -16,14 +17,16 @@ import (
 type ImageRouteHandler struct {
 	log               *zap.SugaredLogger
 	imageDataStore    data.ImageDataStore
-	imageStoreManager service.ImageStorageManager
+	imageStoreManager storage.ImageManager
+	tokenManager      token.Manager
 }
 
-func NewImageRouteHandler(log *zap.SugaredLogger, imgDataStore data.ImageDataStore, store service.ImageStorageManager) *ImageRouteHandler {
+func NewImageRouteHandler(log *zap.SugaredLogger, imgDataStore data.ImageDataStore, store storage.ImageManager, token token.Manager) *ImageRouteHandler {
 	return &ImageRouteHandler{
 		log:               log,
 		imageDataStore:    imgDataStore,
 		imageStoreManager: store,
+		tokenManager:      token,
 	}
 }
 
@@ -55,7 +58,7 @@ func (h *ImageRouteHandler) UploadImage(c *fiber.Ctx) error {
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusBadRequest, "Invalid file extension", err)
 	}
-	imageToken, err := service.GenerateImageToken()
+	imageToken, err := h.tokenManager.GenerateImageToken()
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusBadRequest, "Unable to generate image token", err)
 	}

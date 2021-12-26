@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/caarlos0/env/v6"
 	"github.com/thetkpark/cscms-temp-storage/data"
-	"github.com/thetkpark/cscms-temp-storage/service"
+	"github.com/thetkpark/cscms-temp-storage/service/storage"
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -36,7 +36,7 @@ func main() {
 	}
 
 	// Create disk storage manager
-	diskStorageManager, err := service.NewDiskStorageManager(logger, appENVs.FileStoragePath)
+	diskStorageManager, err := storage.NewDiskStorageManager(logger, appENVs.FileStoragePath)
 	if err != nil {
 		logger.Errorw("unable to create disk storage manager", "error", err.Error())
 		os.Exit(1)

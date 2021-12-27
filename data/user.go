@@ -80,10 +80,6 @@ func (d *GormUserDataStore) FindByAPIToken(token string) (*model.User, error) {
 }
 
 func (d *GormUserDataStore) UpdateAPIToken(userID uint, newToken string) error {
-	user := model.User{
-		ID:       userID,
-		APIToken: newToken,
-	}
-	tx := d.db.Save(&user)
+	tx := d.db.Model(&model.User{}).Where(&model.User{ID: userID}).Update("api_token", newToken)
 	return tx.Error
 }

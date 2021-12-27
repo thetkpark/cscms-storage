@@ -125,7 +125,16 @@ func TestListFiles(t *testing.T) {
 
 	fileLists, err := diskStorageManager.ListFiles()
 	require.NoError(t, err)
-	require.EqualValues(t, fileLists, fileNameLists)
+	require.Len(t, fileLists, len(fileNameLists))
+	for file := range fileLists {
+		isExist := false
+		for fileName := range fileNameLists {
+			if fileName == file {
+				isExist = true
+			}
+		}
+		require.True(t, isExist)
+	}
 }
 
 func TestDeleteFile(t *testing.T) {
@@ -140,7 +149,5 @@ func TestDeleteFile(t *testing.T) {
 
 	err = diskStorageManager.DeleteFile(fileName)
 	require.NoError(t, err)
-
-	_, err = os.Open(fmt.Sprintf("%s/%s", StoragePath, fileName))
-	require.Error(t, err)
+	require.NoFileExists(t, fmt.Sprintf("%s/%s", StoragePath, fileName))
 }

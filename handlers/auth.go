@@ -59,7 +59,7 @@ func (a AuthRouteHandler) OauthProviderCallback(c *fiber.Ctx) error {
 	}
 
 	// Create JWT
-	token, err := a.jwtManager.Generate(strconv.Itoa(int(user.ID)))
+	jwtToken, err := a.jwtManager.Generate(strconv.Itoa(int(user.ID)))
 	if err != nil {
 		a.log.Error("unable to generate JWT\n" + err.Error())
 		return c.Redirect(a.entrypoint)
@@ -68,7 +68,7 @@ func (a AuthRouteHandler) OauthProviderCallback(c *fiber.Ctx) error {
 	// Create cookie and attach
 	c.Cookie(&fiber.Cookie{
 		Name:     "token",
-		Value:    token,
+		Value:    jwtToken,
 		Expires:  time.Now().Add(30 * 24 * time.Hour),
 		Secure:   true,
 		HTTPOnly: true,
@@ -143,12 +143,12 @@ func (a *AuthRouteHandler) GenerateAPIToken(c *fiber.Ctx) error {
 }
 
 func (a *AuthRouteHandler) ParseUserFromCookie(c *fiber.Ctx) error {
-	token := c.Cookies("token", "")
-	if len(token) == 0 {
+	jwtToken := c.Cookies("token", "")
+	if len(jwtToken) == 0 {
 		return c.Next()
 	}
 
-	userIdString, err := a.jwtManager.Validate(token)
+	userIdString, err := a.jwtManager.Validate(jwtToken)
 	if err != nil {
 		a.clearCookie(c)
 		return c.Next()

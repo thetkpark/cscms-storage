@@ -110,6 +110,14 @@ func (a *AuthRouteHandler) Logout(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusOK)
 }
 
+// GenerateAPIToken handlers
+// @Summary Generate new api token
+// @Description Generate new api token for the user
+// @Tags Auth
+// @Success  201 {object} model.User
+// @Failure  401 {object}  handlers.ErrorResponse
+// @Failure  500 {object}  handlers.ErrorResponse
+// @Router /api/auth/token [post]
 func (a *AuthRouteHandler) GenerateAPIToken(c *fiber.Ctx) error {
 	user := c.UserContext().Value("user")
 	if user == nil {
@@ -131,7 +139,7 @@ func (a *AuthRouteHandler) GenerateAPIToken(c *fiber.Ctx) error {
 		return NewHTTPError(a.log, fiber.StatusInternalServerError, "unable to save new api token", err)
 	}
 
-	return c.JSON(userModel)
+	return c.Status(fiber.StatusCreated).JSON(userModel)
 }
 
 func (a *AuthRouteHandler) ParseUserFromCookie(c *fiber.Ctx) error {

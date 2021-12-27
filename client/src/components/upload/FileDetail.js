@@ -1,19 +1,11 @@
 import Icon from '../util/Icon'
 import { toTitleCase } from '../../utils/formatText'
 import FileIcon from '../util/FileIcon'
+import { formatFileSize } from '../../utils/formatFileSize'
 
 const FileDetail = ({ type, file, onRemove }) => {
 	const getType = () => {
 		return file.type !== '' ? toTitleCase(file.type.split('/')[0]) : 'File'
-	}
-	const getFileSize = () => {
-		if (file.size >= 1e6) {
-			return `${parseInt(file.size / 1e6)} mb`
-		} else if (file.size >= 1e3 && file.size < 1e6) {
-			return `${parseInt(file.size / 1e3)} kb`
-		} else {
-			return `${file.size} b`
-		}
 	}
 	const getExtension = () => {
 		return file.name.split('.').pop().toUpperCase()
@@ -45,7 +37,7 @@ const FileDetail = ({ type, file, onRemove }) => {
 			<div style={{ flex: '1', margin: '1.5rem' }}>
 				<div>{file.name}</div>
 				<div>
-					{getType()} • {getFileSize()} • {getExtension()}
+					{getType()} • {formatFileSize(file.size)} • {getExtension()}
 				</div>
 			</div>
 			<div onClick={onRemove}>

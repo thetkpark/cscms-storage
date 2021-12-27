@@ -11,6 +11,7 @@ type UserDataStore interface {
 	FindById(userId uint) (*model.User, error)
 	Create(email string, username string, provider string, avatarUrl string) (*model.User, error)
 	FindByAPIToken(token string) (*model.User, error)
+	UpdateAPIToken(userID uint, newToken string) error
 }
 
 type GormUserDataStore struct {

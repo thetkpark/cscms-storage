@@ -2,10 +2,13 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/shareed2k/goth_fiber"
 	"github.com/thetkpark/cscms-temp-storage/data"
+	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"github.com/thetkpark/cscms-temp-storage/service/jwt"
+	"github.com/thetkpark/cscms-temp-storage/service/token"
 	"go.uber.org/zap"
 	"regexp"
 	"strconv"
@@ -17,14 +20,16 @@ type AuthRouteHandler struct {
 	log           *zap.SugaredLogger
 	userDataStore data.UserDataStore
 	jwtManager    jwt.Manager
+	tokenManager  token.Manager
 	entrypoint    string
 }
 
-func NewAuthRouteHandler(l *zap.SugaredLogger, userDataStore data.UserDataStore, jwtManager jwt.Manager, entry string) *AuthRouteHandler {
+func NewAuthRouteHandler(l *zap.SugaredLogger, userDataStore data.UserDataStore, jwtManager jwt.Manager, tokenManager token.Manager, entry string) *AuthRouteHandler {
 	return &AuthRouteHandler{
 		log:           l,
 		userDataStore: userDataStore,
 		jwtManager:    jwtManager,
+		tokenManager:  tokenManager,
 		entrypoint:    entry,
 	}
 }
@@ -103,6 +108,30 @@ func (a *AuthRouteHandler) GetUserInfo(c *fiber.Ctx) error {
 func (a *AuthRouteHandler) Logout(c *fiber.Ctx) error {
 	a.clearCookie(c)
 	return c.SendStatus(fiber.StatusOK)
+}
+
+func (a *AuthRouteHandler) GenerateAPIToken(c *fiber.Ctx) error {
+	user := c.UserContext().Value("user")
+	if user == nil {
+		return NewHTTPError(a.log, fiber.StatusUnauthorized, "Unauthorized", nil)
+	}
+	userModel, ok := user.(*model.User)
+	if !ok {
+		return NewHTTPError(a.log, fiber.StatusInternalServerError, "unable to parse file model", fmt.Errorf("unable to parse file model"))
+	}
+
+	apiToken, err := a.tokenManager.GenerateAPIToken()
+	if err != nil {
+		return NewHTTPError(a.log, fiber.StatusInternalServerError, "unable to generate api token", err)
+	}
+
+	userModel.APIToken = apiToken
+	err = a.userDataStore.UpdateAPIToken(userModel.ID, apiToken)
+	if err != nil {
+		return NewHTTPError(a.log, fiber.StatusInternalServerError, "unable to save new api token", err)
+	}
+
+	return c.JSON(userModel)
 }
 
 func (a *AuthRouteHandler) ParseUserFromCookie(c *fiber.Ctx) error {

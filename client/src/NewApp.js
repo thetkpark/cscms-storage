@@ -10,7 +10,7 @@ import { useRecoilState } from 'recoil'
 import { authState } from './store/auth'
 import axios from 'axios'
 import Swal from 'sweetalert2'
-import Icon from './components/util/Icon'
+import FileList from './components/file/FileList'
 import UserProfile from './components/auth/UserProfile'
 function App() {
 	const [route, setRoute] = useState('file')
@@ -125,7 +125,9 @@ function App() {
 					<UploadContainer type={route} handleUpload={handleUpload} setError={setError} />
 				)
 			case 'myfile':
-				if (auth.isAuthenticated) return <Fragment></Fragment>
+				if (auth.isAuthenticated) return (
+					<FileList />
+				)
 				setRoute('file')
 				break
 			default:

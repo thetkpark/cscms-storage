@@ -413,20 +413,104 @@ const Icon = ({ name, color }) => {
 					xmlns="http://www.w3.org/2000/svg"
 				>
 					<path
-						fill-rule="evenodd"
-						clip-rule="evenodd"
+						fillRule="evenodd"
+						clipRule="evenodd"
 						d="M21.419 15.732C21.419 19.31 19.31 21.419 15.732 21.419H7.95C4.363 21.419 2.25 19.31 2.25 15.732V7.932C2.25 4.359 3.564 2.25 7.143 2.25H9.143C9.861 2.251 10.537 2.588 10.967 3.163L11.88 4.377C12.312 4.951 12.988 5.289 13.706 5.29H16.536C20.123 5.29 21.447 7.116 21.447 10.767L21.419 15.732Z"
 						stroke="#130F26"
-						stroke-width="1.5"
-						stroke-linecap="round"
-						stroke-linejoin="round"
+						strokeWidth="1.5"
+						strokeLinecap="round"
+						strokeLinejoin="round"
 					/>
 					<path
 						d="M7.48145 14.4629H16.2164"
 						stroke="#130F26"
-						stroke-width="1.5"
-						stroke-linecap="round"
-						stroke-linejoin="round"
+						strokeWidth="1.5"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					/>
+				</svg>
+			)
+		case 'edit':
+			return (
+				<svg
+					width="24"
+					height="24"
+					viewBox="0 0 24 24"
+					fill="none"
+					xmlns="http://www.w3.org/2000/svg"
+				>
+					<path
+						d="M13.7471 20.4428H20.9997"
+						stroke="#8F8F8F"
+						strokeWidth="1.5"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					/>
+					<path
+						fillRule="evenodd"
+						clipRule="evenodd"
+						d="M12.78 3.79479C13.5557 2.86779 14.95 2.73186 15.8962 3.49173C15.9485 3.53296 17.6295 4.83879 17.6295 4.83879C18.669 5.46719 18.992 6.80311 18.3494 7.82259C18.3153 7.87718 8.81195 19.7645 8.81195 19.7645C8.49578 20.1589 8.01583 20.3918 7.50291 20.3973L3.86353 20.443L3.04353 16.9723C2.92866 16.4843 3.04353 15.9718 3.3597 15.5773L12.78 3.79479Z"
+						stroke="#8F8F8F"
+						strokeWidth="1.5"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					/>
+					<path
+						d="M11.0205 6.00098L16.4728 10.1881"
+						stroke="#8F8F8F"
+						strokeWidth="1.5"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					/>
+				</svg>
+			)
+		case 'arrow-up':
+			return (
+				<svg
+					width="24"
+					height="25"
+					viewBox="0 0 24 25"
+					fill="none"
+					xmlns="http://www.w3.org/2000/svg"
+				>
+					<path
+						d="M11.7256 4.75L11.7256 19.75"
+						stroke="#8F8F8F"
+						strokeWidth="1.5"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					/>
+					<path
+						d="M5.701 10.7998L11.725 4.7498L17.75 10.7998"
+						stroke="#8F8F8F"
+						strokeWidth="1.5"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					/>
+				</svg>
+			)
+		case 'arrow-down':
+			return (
+				<svg
+					width="24"
+					height="25"
+					viewBox="0 0 24 25"
+					fill="none"
+					xmlns="http://www.w3.org/2000/svg"
+				>
+					<path
+						d="M12.2744 20.25L12.2744 5.25"
+						stroke="#8F8F8F"
+						strokeWidth="1.5"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					/>
+					<path
+						d="M18.299 14.2002L12.275 20.2502L6.25 14.2002"
+						stroke="#8F8F8F"
+						strokeWidth="1.5"
+						strokeLinecap="round"
+						strokeLinejoin="round"
 					/>
 				</svg>
 			)

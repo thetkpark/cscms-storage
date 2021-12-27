@@ -132,13 +132,13 @@ func (a *AuthRouteHandler) GenerateAPIToken(c *fiber.Ctx) error {
 		return NewHTTPError(a.log, fiber.StatusInternalServerError, "unable to parse file model", fmt.Errorf("unable to parse file model"))
 	}
 
-	apiToken, err := a.tokenManager.GenerateAPIToken()
+	apiKey, err := a.tokenManager.GenerateAPIToken()
 	if err != nil {
 		return NewHTTPError(a.log, fiber.StatusInternalServerError, "unable to generate api token", err)
 	}
 
-	userModel.APIToken = apiToken
-	err = a.userDataStore.UpdateAPIToken(userModel.ID, apiToken)
+	userModel.APIKey = apiKey
+	err = a.userDataStore.UpdateAPIKey(userModel.ID, apiKey)
 	if err != nil {
 		return NewHTTPError(a.log, fiber.StatusInternalServerError, "unable to save new api token", err)
 	}
@@ -152,13 +152,13 @@ func (a *AuthRouteHandler) ParseUser(c *fiber.Ctx) error {
 	// Check if JWT token in cookie is found
 	if len(jwtToken) == 0 {
 		// Check api-token in request header
-		apiToken := c.Get("x-api-key", "")
-		if len(apiToken) == 0 {
+		apiKey := c.Get("x-api-key", "")
+		if len(apiKey) == 0 {
 			return c.Next()
 		}
 
 		// Get user from api-token
-		userModel, err := a.userDataStore.FindByAPIToken(apiToken)
+		userModel, err := a.userDataStore.FindByAPIKey(apiKey)
 		if err != nil {
 			return NewHTTPError(a.log, fiber.StatusInternalServerError, "unable to get user by api token", err)
 		}

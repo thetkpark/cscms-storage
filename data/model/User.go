@@ -12,5 +12,5 @@ type User struct {
 	AvatarURL string    `json:"avatar_url"`
 	Files     []File    `json:"files"`
 	Images    []Image   `json:"images"`
-	APIToken  string    `json:"api_token" gorm:"unique"`
+	APIKey    string    `json:"api_key" gorm:"unique"`
 }

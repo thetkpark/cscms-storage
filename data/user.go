@@ -10,8 +10,8 @@ type UserDataStore interface {
 	FindByProviderAndEmail(provider string, email string) (*model.User, error)
 	FindById(userId uint) (*model.User, error)
 	Create(email string, username string, provider string, avatarUrl string) (*model.User, error)
-	FindByAPIToken(token string) (*model.User, error)
-	UpdateAPIToken(userID uint, newToken string) error
+	FindByAPIKey(key string) (*model.User, error)
+	UpdateAPIKey(userID uint, newKey string) error
 }
 
 type GormUserDataStore struct {
@@ -67,9 +67,9 @@ func (d *GormUserDataStore) Create(email string, username string, provider strin
 	return user, nil
 }
 
-func (d *GormUserDataStore) FindByAPIToken(token string) (*model.User, error) {
+func (d *GormUserDataStore) FindByAPIKey(key string) (*model.User, error) {
 	var user model.User
-	tx := d.db.Where(&model.User{APIToken: token}).First(&user)
+	tx := d.db.Where(&model.User{APIKey: key}).First(&user)
 	if tx.Error != nil {
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -79,7 +79,7 @@ func (d *GormUserDataStore) FindByAPIToken(token string) (*model.User, error) {
 	return &user, nil
 }
 
-func (d *GormUserDataStore) UpdateAPIToken(userID uint, newToken string) error {
-	tx := d.db.Model(&model.User{}).Where(&model.User{ID: userID}).Update("api_token", newToken)
+func (d *GormUserDataStore) UpdateAPIKey(userID uint, newKey string) error {
+	tx := d.db.Model(&model.User{}).Where(&model.User{ID: userID}).Update("api_key", newKey)
 	return tx.Error
 }

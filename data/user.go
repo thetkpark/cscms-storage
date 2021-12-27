@@ -10,6 +10,7 @@ type UserDataStore interface {
 	FindByProviderAndEmail(provider string, email string) (*model.User, error)
 	FindById(userId uint) (*model.User, error)
 	Create(email string, username string, provider string, avatarUrl string) (*model.User, error)
+	FindByAPIToken(token string) (*model.User, error)
 }
 
 type GormUserDataStore struct {
@@ -63,4 +64,25 @@ func (d *GormUserDataStore) Create(email string, username string, provider strin
 		return nil, tx.Error
 	}
 	return user, nil
+}
+
+func (d *GormUserDataStore) FindByAPIToken(token string) (*model.User, error) {
+	var user model.User
+	tx := d.db.Where(&model.User{APIToken: token}).First(&user)
+	if tx.Error != nil {
+		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, tx.Error
+	}
+	return &user, nil
+}
+
+func (d *GormUserDataStore) UpdateAPIToken(userID uint, newToken string) error {
+	user := model.User{
+		ID:       userID,
+		APIToken: newToken,
+	}
+	tx := d.db.Save(&user)
+	return tx.Error
 }

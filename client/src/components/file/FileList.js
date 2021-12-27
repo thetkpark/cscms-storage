@@ -30,11 +30,11 @@ const FileList = () => {
 	])
 	const [displayFile, setDisplayFile] = useState(files)
 	useEffect(() => {
-		if (sort.name == '') {
+		if (sort.name === '') {
 			setDisplayFile(files)
 		} else {
 			let temp = [...files].sort((a, b) => {
-				if (sort.name == 'size') {
+				if (sort.name === 'size') {
 					if (sort.asc) return a.size - b.size
 					return b.size - a.size
 				}
@@ -48,7 +48,7 @@ const FileList = () => {
 		}
 	}, [sort])
 	const handleSort = type => {
-		if (type == sort.name) {
+		if (type === sort.name) {
 			if (sort.asc) {
 				setSort({ name: type, asc: false })
 			} else {
@@ -70,7 +70,7 @@ const FileList = () => {
 								<th>
 									<div onClick={() => handleSort('name')}>
 										Name{' '}
-										{sort.name == 'name' && sort.asc ? (
+										{sort.name === 'name' && sort.asc ? (
 											<Icon name="arrow-down" />
 										) : (
 											<Icon name="arrow-up" />
@@ -80,7 +80,7 @@ const FileList = () => {
 								<th>
 									<div onClick={() => handleSort('size')}>
 										Size{' '}
-										{sort.name == 'size' && sort.asc ? (
+										{sort.name === 'size' && sort.asc ? (
 											<Icon name="arrow-down" />
 										) : (
 											<Icon name="arrow-up" />
@@ -90,7 +90,7 @@ const FileList = () => {
 								<th>
 									<div onClick={() => handleSort('lastModified')}>
 										Last Modified{' '}
-										{sort.name == 'lastModified' && sort.asc ? (
+										{sort.name === 'lastModified' && sort.asc ? (
 											<Icon name="arrow-down" />
 										) : (
 											<Icon name="arrow-up" />

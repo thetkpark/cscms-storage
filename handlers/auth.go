@@ -96,7 +96,11 @@ func (a *AuthRouteHandler) GetUserInfo(c *fiber.Ctx) error {
 	if user == nil {
 		return NewHTTPError(a.log, fiber.StatusUnauthorized, "Unauthorized", nil)
 	}
-	return c.JSON(user)
+	userModel, ok := user.(*model.User)
+	if !ok {
+		return NewHTTPError(a.log, fiber.StatusUnauthorized, "Unauthorized", nil)
+	}
+	return c.JSON(userModel)
 }
 
 // Logout handlers
@@ -142,28 +146,47 @@ func (a *AuthRouteHandler) GenerateAPIToken(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(userModel)
 }
 
-func (a *AuthRouteHandler) ParseUserFromCookie(c *fiber.Ctx) error {
+func (a *AuthRouteHandler) ParseUser(c *fiber.Ctx) error {
+	var user *model.User = nil
 	jwtToken := c.Cookies("token", "")
+	// Check if JWT token in cookie is found
 	if len(jwtToken) == 0 {
-		return c.Next()
-	}
+		// Check api-token in request header
+		apiToken := c.Get("x-api-key", "")
+		if len(apiToken) == 0 {
+			return c.Next()
+		}
 
-	userIdString, err := a.jwtManager.Validate(jwtToken)
-	if err != nil {
-		a.clearCookie(c)
-		return c.Next()
-	}
+		// Get user from api-token
+		userModel, err := a.userDataStore.FindByAPIToken(apiToken)
+		if err != nil {
+			return NewHTTPError(a.log, fiber.StatusInternalServerError, "unable to get user by api token", err)
+		}
+		if userModel == nil {
+			return c.Next()
+		}
+		user = userModel
+	} else {
+		// Validate JWT token to get user ID in aud field
+		userIdString, err := a.jwtManager.Validate(jwtToken)
+		if err != nil {
+			a.clearCookie(c)
+			return c.Next()
+		}
 
-	// Get user
-	userIdInt, err := strconv.Atoi(userIdString)
-	if err != nil {
-		a.clearCookie(c)
-		return NewHTTPError(a.log, fiber.StatusInternalServerError, "Unable to convert userId string to int", err)
-	}
-	user, err := a.userDataStore.FindById(uint(userIdInt))
-	if err != nil || user == nil {
-		a.clearCookie(c)
-		return c.Next()
+		// Get user from userID
+		userIdInt, err := strconv.Atoi(userIdString)
+		if err != nil {
+			a.clearCookie(c)
+			return c.Next()
+		}
+		user, err = a.userDataStore.FindById(uint(userIdInt))
+		if err != nil {
+			return NewHTTPError(a.log, fiber.StatusInternalServerError, "unable to get user by id", err)
+		} else if user == nil {
+			a.clearCookie(c)
+			return c.Next()
+		}
 	}
 
 	c.SetUserContext(context.WithValue(c.UserContext(), "user", user))

@@ -132,7 +132,7 @@ func main() {
 		})
 	})
 
-	apiPath := app.Group("/api", authHandler.ParseUserFromCookie)
+	apiPath := app.Group("/api", authHandler.ParseUser)
 
 	filePath := apiPath.Group("/file")
 	filePath.Post("/", fileHandler.UploadFile)
@@ -152,10 +152,10 @@ func main() {
 
 	authPath := app.Group("/auth")
 	authPath.Get("/logout", authHandler.Logout)
-	authPath.Get("/user", authHandler.ParseUserFromCookie, authHandler.AuthenticatedOnly, authHandler.GetUserInfo)
+	authPath.Get("/user", authHandler.ParseUser, authHandler.AuthenticatedOnly, authHandler.GetUserInfo)
 	authPath.Get("/:provider", goth_fiber.BeginAuthHandler)
 	authPath.Get("/:provider/callback", authHandler.OauthProviderCallback)
-	apiPath.Post("/auth/token", authHandler.ParseUserFromCookie, authHandler.AuthenticatedOnly, authHandler.GenerateAPIToken)
+	apiPath.Post("/auth/token", authHandler.ParseUser, authHandler.AuthenticatedOnly, authHandler.GenerateAPIToken)
 
 	// Other routes
 	app.Static("/", "./client/build")

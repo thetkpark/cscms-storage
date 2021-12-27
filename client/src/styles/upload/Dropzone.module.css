@@ -1,0 +1,22 @@
+.Dropzone {
+	flex:1;
+	width: 100%;
+	border: 2px dashed #6F6CBB;
+}
+.Dropzone.drag {
+	background: #B0B2E2;
+}
+.DropZoneTextContainer {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100%;
+	flex-direction: column;
+	color: #8F8F8F;
+}
+.DropZoneTextContainer p {
+	margin: 0;
+}
+.drag .DropZoneTextContainer h2 {
+	color: #FFFFFF;
+}

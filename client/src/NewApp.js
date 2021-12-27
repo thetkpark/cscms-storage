@@ -125,7 +125,9 @@ function App() {
 					<UploadContainer type={route} handleUpload={handleUpload} setError={setError} />
 				)
 			case 'myfile':
-				if (auth.isAuthenticated) return <Fragment></Fragment>
+				if (auth.isAuthenticated) return (
+					<div>My file</div>
+				)
 				setRoute('file')
 				break
 			default:

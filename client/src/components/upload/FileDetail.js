@@ -1,5 +1,6 @@
 import Icon from '../util/Icon'
 import { toTitleCase } from '../../utils/formatText'
+import FileIcon from '../util/FileIcon'
 
 const FileDetail = ({ type, file, onRemove }) => {
 	const getType = () => {
@@ -17,36 +18,7 @@ const FileDetail = ({ type, file, onRemove }) => {
 	const getExtension = () => {
 		return file.name.split('.').pop().toUpperCase()
 	}
-	const getDisplay = () => {
-		if (type === 'image') {
-			return (
-				<img src={URL.createObjectURL(file)} alt={file.name} style={{ width: '100%' }} />
-			)
-		} else {
-			let ext = getExtension()
-			if (ext === 'PDF') {
-				return <Icon name="pdf-file" />
-			} else if (file.type.split('/')[0] === 'image') {
-				return <Icon name="img-file" />
-			} else if (file.type.split('/')[0] === 'video') {
-				return <Icon name="video-file" />
-			} else if (file.type.split('/')[0] === 'audio') {
-				return <Icon name="music-file" />
-			} else if (ext === 'DOCX' || ext === 'DOC') {
-				return <Icon name="document-file" />
-			} else if (ext === 'XLSX' || ext === 'XLS') {
-				return <Icon name="sheet-file" />
-			} else if (ext === 'PPTX' || ext === 'PPT') {
-				return <Icon name="slide-file" />
-			} else if (ext === 'PSD') {
-				return <Icon name="ps-file" />
-			} else if (ext === 'AI') {
-				return <Icon name="ai-file" />
-			} else {
-				return <Icon name="other-file" />
-			}
-		}
-	}
+
 	return (
 		<div
 			style={{ marginTop: '3rem', display: 'flex', width: '60%', alignItems: 'center' }}
@@ -60,7 +32,15 @@ const FileDetail = ({ type, file, onRemove }) => {
 					justifyContent: 'center'
 				}}
 			>
-				{getDisplay()}
+				{type === 'image' ? (
+					<img
+						src={URL.createObjectURL(file)}
+						alt={file.name}
+						style={{ width: '100%' }}
+					/>
+				) : (
+					<FileIcon ext={getExtension()} type={file.type.split('/')[0]} />
+				)}
 			</div>
 			<div style={{ flex: '1', margin: '1.5rem' }}>
 				<div>{file.name}</div>

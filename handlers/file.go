@@ -175,6 +175,7 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 		}
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to check if file exist", err)
 	}
+
 	// Get encrypted file from storage manager
 	file, err := h.storageManager.OpenFile(fileInfo.ID)
 	if err != nil {
@@ -183,9 +184,14 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 
 	if fileInfo.Encrypted {
 		// Decrypt file if encrypted
-		file, err = h.encryptionManager.Decrypt(file, fileInfo.Nonce)
+		err = h.encryptionManager.Decrypt(file, fileInfo.Nonce, c)
 		if err != nil {
 			return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to decrypt", err)
+		}
+	} else {
+		// Copy file content to response
+		if _, err := io.Copy(c, file); err != nil {
+			return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to copy file content to response", err)
 		}
 	}
 
@@ -198,7 +204,7 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 	c.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, fileInfo.Filename))
 	c.Set("Content-Type", "application/octet-stream")
 
-	return c.SendStream(file, int(fileInfo.FileSize))
+	return nil
 }
 
 // GetOwnFiles handlers

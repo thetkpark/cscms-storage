@@ -51,7 +51,7 @@ func (m *SIOEncryptionManager) Encrypt(input io.Reader) (io.Reader, string, erro
 	return encrypted, hex.EncodeToString(nonce[:]), nil
 }
 
-func (m *SIOEncryptionManager) Decrypt(input io.Reader, nonceString string) (io.Reader, error) {
+func (m *SIOEncryptionManager) Decrypt(input io.Reader, nonceString string, output io.Writer) error {
 	// the master key used to derive encryption keys
 	masterKey := []byte(m.masterKey)
 
@@ -59,7 +59,7 @@ func (m *SIOEncryptionManager) Decrypt(input io.Reader, nonceString string) (io.
 	nonce, err := hex.DecodeString(nonceString)
 	if err != nil {
 		m.log.Errorw("Failed to decode hex string to byte", "error", err)
-		return nil, err
+		return err
 	}
 
 	// derive the encryption key from the master key and the nonce
@@ -67,8 +67,17 @@ func (m *SIOEncryptionManager) Decrypt(input io.Reader, nonceString string) (io.
 	kdf := hkdf.New(sha256.New, masterKey, nonce, nil)
 	if _, err := io.ReadFull(kdf, key[:]); err != nil {
 		m.log.Errorw("Failed to derive encryption key", "error", err)
-		return nil, err
+		return err
 	}
 
-	return sio.DecryptReader(input, sio.Config{Key: key[:]})
+	if _, err := sio.Decrypt(output, input, sio.Config{Key: key[:]}); err != nil {
+		if _, ok := err.(sio.Error); ok {
+			m.log.Errorw("Malformed encrypted data", "error", err)
+			return err
+		}
+		m.log.Errorw("Failed to decrypt data", "error", err)
+		return err
+	}
+
+	return nil
 }

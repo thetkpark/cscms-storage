@@ -32,11 +32,9 @@ func TestEncryptionAndDecryption(t *testing.T) {
 	require.NotEqual(t, inputString, b.String())
 
 	// Decrypt the reader (Somehow didn't works)
-	//decryptedReader, err := sioManager.Decrypt(encryptedReader, nonce)
+	//decryptedWriter := new(strings.Builder)
+	//err = sioManager.Decrypt(encryptedReader, nonce, decryptedWriter)
+	//sugarLogger.Info("n", decryptedWriter.Len())
 	//require.NoError(t, err)
-	////require.Equal(t, inputString, )
-	//buf := new(strings.Builder)
-	//_, err = io.Copy(buf, decryptedReader)
-	//require.NoError(t, err)
-	//require.Equal(t, inputString, buf.String())
+	//require.Equal(t, inputString, decryptedWriter.String())
 }

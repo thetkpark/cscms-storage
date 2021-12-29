@@ -11,6 +11,7 @@ import (
 	"github.com/thetkpark/cscms-temp-storage/service/token"
 	"go.uber.org/zap"
 	"io"
+	"io/ioutil"
 	"strconv"
 	"strings"
 	"time"
@@ -184,15 +185,14 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 
 	if fileInfo.Encrypted {
 		// Decrypt file if encrypted
-		err = h.encryptionManager.Decrypt(file, fileInfo.Nonce, c)
+		file, err = h.encryptionManager.Decrypt(file, fileInfo.Nonce)
 		if err != nil {
 			return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to decrypt", err)
 		}
-	} else {
-		// Copy file content to response
-		if _, err := io.Copy(c, file); err != nil {
-			return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to copy file content to response", err)
-		}
+	}
+	fileByte, err := ioutil.ReadAll(file)
+	if err != nil {
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to read file to []byte", err)
 	}
 
 	// Increase visited count
@@ -204,7 +204,7 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 	c.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, fileInfo.Filename))
 	c.Set("Content-Type", "application/octet-stream")
 
-	return nil
+	return c.Send(fileByte)
 }
 
 // GetOwnFiles handlers

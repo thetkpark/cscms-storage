@@ -69,7 +69,11 @@ function App() {
 				setDialog('login')
 				break
 			case 'logout':
-				setAuth(false)
+				axios.get("https://storage.cscms.me/auth/logout").then(() => {
+					setAuth(false)
+				}).catch(err => {
+					console.log(err)
+				})
 				break
 			default:
 				break

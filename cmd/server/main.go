@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/markbates/goth"
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/handlers"
@@ -121,6 +122,13 @@ func main() {
 		AllowOrigins:     "https://storage.cscms.me, http://localhost:5050",
 		AllowMethods:     "GET POST PATCH DELETE",
 		AllowCredentials: true,
+	}))
+	app.Use(compress.New(compress.Config{
+		Next: func(c *fiber.Ctx) bool {
+			t := c.Params("token", "")
+			return len(t) == 0
+		},
+		Level: compress.LevelBestSpeed,
 	}))
 	//app.Use(csrf.New(csrf.Config{
 	//}))

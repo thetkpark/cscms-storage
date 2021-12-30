@@ -3,6 +3,7 @@ import FileIcon from '../util/FileIcon'
 import { formatFileSize } from '../../utils/formatFileSize'
 import styles from '../../styles/file/FileList.module.css'
 import Icon from '../util/Icon'
+import axios from 'axios'
 const FileList = () => {
 	const [sort, setSort] = useState({ name: '', asc: true })
 	const [files, setFiles] = useState([
@@ -28,6 +29,16 @@ const FileList = () => {
 			lastModified: 'Dec, 13 2021'
 		}
 	])
+	useEffect(() => {
+		fetchFiles();
+	}, [])
+	const fetchFiles = async () => {
+		const fileRes = await axios.get('https://storage.cscms.me/api/file');
+		const fileData = fileRes.data;
+		const imageRes = await axios.get("https://storage.cscms.me/api/image");
+		const imageData = imageRes.data;
+		setFiles([...fileData, ...imageData]);
+	}
 	const [displayFile, setDisplayFile] = useState(files)
 	useEffect(() => {
 		if (sort.name === '') {

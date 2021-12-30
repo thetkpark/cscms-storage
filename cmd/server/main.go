@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/markbates/goth"
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/handlers"
@@ -21,7 +22,6 @@ import (
 	"github.com/caarlos0/env/v6"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/csrf"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/markbates/goth/providers/github"
 	"github.com/markbates/goth/providers/google"
@@ -112,7 +112,7 @@ func main() {
 	// Create handlers
 	fileHandler := handlers.NewFileRoutesHandler(logger, sioEncryptionManager, gormFileDataStore, diskStorageManager, tokenManager, time.Duration(appENVs.FileStoreMaxDuration)*time.Hour*24)
 	imageHandler := handlers.NewImageRouteHandler(logger, gormImageDataStore, imageStorageManager, tokenManager)
-	authHandler := handlers.NewAuthRouteHandler(logger, gormUserDataStore, jwtManager, appENVs.Entrypoint)
+	authHandler := handlers.NewAuthRouteHandler(logger, gormUserDataStore, jwtManager, tokenManager, appENVs.Entrypoint)
 
 	app.Use(limiter.New(limiter.Config{
 		Expiration: time.Second * 5,
@@ -123,7 +123,15 @@ func main() {
 		AllowMethods:     "GET POST PATCH DELETE",
 		AllowCredentials: true,
 	}))
-	app.Use(csrf.New(csrf.Config{}))
+	app.Use(compress.New(compress.Config{
+		Next: func(c *fiber.Ctx) bool {
+			t := c.Params("token", "")
+			return len(t) == 0
+		},
+		Level: compress.LevelBestSpeed,
+	}))
+	//app.Use(csrf.New(csrf.Config{
+	//}))
 
 	app.Get("/api/ping", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
@@ -132,7 +140,7 @@ func main() {
 		})
 	})
 
-	apiPath := app.Group("/api", authHandler.ParseUserFromCookie)
+	apiPath := app.Group("/api", authHandler.ParseUser)
 
 	filePath := apiPath.Group("/file")
 	filePath.Post("/", fileHandler.UploadFile)
@@ -152,9 +160,10 @@ func main() {
 
 	authPath := app.Group("/auth")
 	authPath.Get("/logout", authHandler.Logout)
-	authPath.Get("/user", authHandler.ParseUserFromCookie, authHandler.AuthenticatedOnly, authHandler.GetUserInfo)
+	authPath.Get("/user", authHandler.ParseUser, authHandler.AuthenticatedOnly, authHandler.GetUserInfo)
 	authPath.Get("/:provider", goth_fiber.BeginAuthHandler)
 	authPath.Get("/:provider/callback", authHandler.OauthProviderCallback)
+	apiPath.Post("/auth/token", authHandler.ParseUser, authHandler.AuthenticatedOnly, authHandler.GenerateAPIToken)
 
 	// Other routes
 	app.Static("/", "./client/build")

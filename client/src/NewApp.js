@@ -23,6 +23,26 @@ function App() {
 		ReactGA.pageview(window.location.pathname)
 	}, [])
 	useEffect(() => {
+		axios
+			.get('https://storage.cscms.me/auth/user')
+			.then(res => {
+				setAuth({
+					isAuthenticated: true,
+					user: {
+						name: res.data.username,
+						image: res.data.avatar_url,
+						email: res.data.email
+					}
+				})
+			})
+			.catch(err => {
+				setAuth({
+					isAuthenticated: false,
+					user: null
+				})
+			})
+	}, [])
+	useEffect(() => {
 		if (auth.isAuthenticated) {
 			setDialog(null)
 		}
@@ -125,9 +145,7 @@ function App() {
 					<UploadContainer type={route} handleUpload={handleUpload} setError={setError} />
 				)
 			case 'myfile':
-				if (auth.isAuthenticated) return (
-					<FileList />
-				)
+				if (auth.isAuthenticated) return <FileList />
 				setRoute('file')
 				break
 			default:
@@ -136,24 +154,26 @@ function App() {
 		}
 	}
 	return (
-		<div className={styles.App}>
-			<div className={styles.Wrapper}>
-				<Navbar auth={auth.isAuthenticated} handleAction={handleAction} />
-				<div style={{ padding: '2rem 8rem', display: 'flex', flexDirection: 'column' }}>
-					{auth.isAuthenticated ? (
-						<UserProfile user={auth.user} handleChangeRoute={handleChangeRoute} />
-					) : null}
+		<Fragment>
+			<div className={styles.App}>
+				<div className={styles.Wrapper}>
+					<Navbar auth={auth.isAuthenticated} handleAction={handleAction} />
+					<div style={{ padding: '2rem 8rem', display: 'flex', flexDirection: 'column' }}>
+						{auth.isAuthenticated ? (
+							<UserProfile user={auth.user} handleChangeRoute={handleChangeRoute} />
+						) : null}
 
-					{renderScreen()}
+						{renderScreen()}
+					</div>
+					<Sidebar currentRoute={route} handleChangeRoute={handleChangeRoute} />
+					{!auth.isAuthenticated && dialog ? (
+						<Dialog open={dialog !== null} onClose={() => setDialog(null)}>
+							<AuthForm mode={dialog} changeMode={mode => setDialog(mode)} />
+						</Dialog>
+					) : null}
 				</div>
-				<Sidebar currentRoute={route} handleChangeRoute={handleChangeRoute} />
-				{!auth.isAuthenticated && dialog ? (
-					<Dialog open={dialog !== null} onClose={() => setDialog(null)}>
-						<AuthForm mode={dialog} changeMode={mode => setDialog(mode)} />
-					</Dialog>
-				) : null}
 			</div>
-		</div>
+		</Fragment>
 	)
 }
 

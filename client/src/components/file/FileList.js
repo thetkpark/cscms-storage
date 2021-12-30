@@ -3,31 +3,20 @@ import FileIcon from '../util/FileIcon'
 import { formatFileSize } from '../../utils/formatFileSize'
 import styles from '../../styles/file/FileList.module.css'
 import Icon from '../util/Icon'
+import axios from 'axios'
 const FileList = () => {
 	const [sort, setSort] = useState({ name: '', asc: true })
-	const [files, setFiles] = useState([
-		{
-			name: 'b.docx',
-			ext: 'DOCX',
-			type: 'document',
-			size: 100000,
-			lastModified: 'Dec, 13 2021'
-		},
-		{
-			name: 'a.docx',
-			ext: 'DOCX',
-			type: 'document',
-			size: 1500000,
-			lastModified: 'Dec, 13 2021'
-		},
-		{
-			name: 'c.docx',
-			ext: 'DOCX',
-			type: 'document',
-			size: 1200000,
-			lastModified: 'Dec, 13 2021'
-		}
-	])
+	const [files, setFiles] = useState([])
+	useEffect(() => {
+		fetchFiles()
+	}, [])
+	const fetchFiles = async () => {
+		const fileRes = await axios.get('https://storage.cscms.me/api/file')
+		const fileData = fileRes.data
+		const imageRes = await axios.get('https://storage.cscms.me/api/image')
+		const imageData = imageRes.data
+		setFiles([...fileData, ...imageData])
+	}
 	const [displayFile, setDisplayFile] = useState(files)
 	useEffect(() => {
 		if (sort.name === '') {
@@ -68,9 +57,9 @@ const FileList = () => {
 						<thead>
 							<tr>
 								<th>
-									<div onClick={() => handleSort('name')}>
+									<div onClick={() => handleSort('filename')}>
 										Name{' '}
-										{sort.name === 'name' && sort.asc ? (
+										{sort.name === 'filename' && sort.asc ? (
 											<Icon name="arrow-down" />
 										) : (
 											<Icon name="arrow-up" />
@@ -78,9 +67,9 @@ const FileList = () => {
 									</div>
 								</th>
 								<th>
-									<div onClick={() => handleSort('size')}>
+									<div onClick={() => handleSort('file_size')}>
 										Size{' '}
-										{sort.name === 'size' && sort.asc ? (
+										{sort.name === 'file_size' && sort.asc ? (
 											<Icon name="arrow-down" />
 										) : (
 											<Icon name="arrow-up" />
@@ -88,9 +77,9 @@ const FileList = () => {
 									</div>
 								</th>
 								<th>
-									<div onClick={() => handleSort('lastModified')}>
+									<div onClick={() => handleSort('updated_at')}>
 										Last Modified{' '}
-										{sort.name === 'lastModified' && sort.asc ? (
+										{sort.name === 'updated_at' && sort.asc ? (
 											<Icon name="arrow-down" />
 										) : (
 											<Icon name="arrow-up" />
@@ -112,10 +101,14 @@ const FileList = () => {
 									return (
 										<tr key={index}>
 											<td>
-												<FileIcon ext={file.ext} type={file.type} /> {file.name}
+												<FileIcon
+													ext={file.filename.split('.')[1]}
+													type={file.file_type}
+												/>{' '}
+												{file.filename}
 											</td>
-											<td>{formatFileSize(file.size)}</td>
-											<td>{file.lastModified}</td>
+											<td>{formatFileSize(file.file_size)}</td>
+											<td>{file.updated_at}</td>
 											<td>
 												<div className={styles.EditIcon}>
 													<Icon name="edit" />

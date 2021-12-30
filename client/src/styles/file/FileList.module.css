@@ -1,0 +1,66 @@
+.FileListWrapper {
+	background: white;
+	width: calc(100% - 16rem);
+	padding: 2rem 8rem;
+	border-radius: 50px;
+	height: calc(75vh - 6rem);
+    display: flex;
+    flex-direction: column;
+}
+.FileListWrapper h3 {
+	font-size: 1.5rem;
+	font-weight: 600;
+    margin: 0;
+    padding: 1rem 0;
+	text-align: center;
+}
+.FileListWrapper div {
+    position: relative;
+    height: calc(100% - 80px);
+    overflow: auto;
+}
+.FileList {
+	flex: 1;
+	width: 100%;
+	color: #8f8f8f;
+}
+.FileList thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: white;
+}
+.FileList thead th {
+	width: 30%;
+	text-align: left;
+	padding: 0.5rem 1rem;
+	font-weight: 500;
+	font-size: 1.125rem;
+}
+.FileList thead th div {
+	display: flex;
+	align-items: center;
+	user-select: none;
+	cursor: pointer;
+}
+.FileList thead th div svg {
+	margin-left: 0.5rem;
+}
+.FileList td {
+	padding: 1rem;
+	font-weight: 500;
+}
+.FileList tr td:first-child {
+	display: flex;
+	align-items: center;
+}
+.FileList td svg {
+	margin-right: 0.5rem;
+}
+.FileList th:last-child {
+	width: 10%;
+}
+.EditIcon {
+	cursor: pointer;
+	user-select: none;
+}

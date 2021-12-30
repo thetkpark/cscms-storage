@@ -11,7 +11,6 @@ import (
 	"github.com/thetkpark/cscms-temp-storage/service/token"
 	"go.uber.org/zap"
 	"io"
-	"io/ioutil"
 	"strconv"
 	"strings"
 	"time"
@@ -190,10 +189,6 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 			return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to decrypt", err)
 		}
 	}
-	fileByte, err := ioutil.ReadAll(file)
-	if err != nil {
-		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to read file to []byte", err)
-	}
 
 	// Increase visited count
 	err = h.fileDataStore.IncreaseVisited(fileInfo.ID)
@@ -204,7 +199,7 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 	c.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, fileInfo.Filename))
 	c.Set("Content-Type", "application/octet-stream")
 
-	return c.Send(fileByte)
+	return c.SendStream(file, int(fileInfo.FileSize))
 }
 
 // GetOwnFiles handlers

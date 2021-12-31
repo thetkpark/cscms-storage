@@ -59,7 +59,7 @@ const FileList = () => {
 				<div>
 					<table className={styles.FileList}>
 						<thead>
-							<tr>
+							<tr className={styles.Row}>
 								<th>
 									<div onClick={() => handleSort('filename')}>
 										Name{' '}
@@ -97,7 +97,7 @@ const FileList = () => {
 							{displayFile.length === 0 ? (
 								<Fragment>
 									<tr>
-										<td colSpan={4}>No files found</td>
+										<td className={styles.Empty} colSpan={4}>No files found</td>
 									</tr>
 								</Fragment>
 							) : (

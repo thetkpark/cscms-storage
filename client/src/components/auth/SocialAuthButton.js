@@ -3,7 +3,7 @@ import styles from '../../styles/auth/SocialAuth.module.css'
 import { toTitleCase } from '../../utils/formatText'
 const SocialAuthButton = ({ mode, platform }) => {
 	const handleAction = (mode, platform) => {
-		window.open(`https://storage.cscms.me/auth/${platform.toLowerCase()}`)
+		window.location.href = `https://storage.cscms.me/auth/${platform.toLowerCase()}`
 	}
 	return (
 		<div

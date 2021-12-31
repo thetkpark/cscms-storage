@@ -119,7 +119,7 @@ func main() {
 		Max:        10,
 	}))
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "https://storage.cscms.me, http://localhost:5050",
+		AllowOrigins:     "https://storage.cscms.me, http://localhost:3000",
 		AllowMethods:     "GET POST PATCH DELETE",
 		AllowCredentials: true,
 	}))

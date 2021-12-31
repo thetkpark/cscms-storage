@@ -50,7 +50,7 @@
 	padding: 1rem;
 	font-weight: 500;
 }
-.FileList tr td:first-child {
+.FileList tr.Row td:first-child {
 	display: flex;
 	align-items: center;
 }
@@ -63,4 +63,7 @@
 .EditIcon {
 	cursor: pointer;
 	user-select: none;
+}
+.Empty {
+	text-align: center;
 }

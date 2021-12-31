@@ -7,6 +7,7 @@ import axios from 'axios'
 const FileList = () => {
 	const [sort, setSort] = useState({ name: '', asc: true })
 	const [files, setFiles] = useState([])
+	const [displayFile, setDisplayFile] = useState([])
 	useEffect(() => {
 		fetchFiles()
 	}, [])
@@ -17,7 +18,10 @@ const FileList = () => {
 		const imageData = imageRes.data
 		setFiles([...fileData, ...imageData])
 	}
-	const [displayFile, setDisplayFile] = useState(files)
+	useEffect(() => {
+		setDisplayFile(files)
+		setSort({ name: '', asc: true })
+	}, [files])
 	useEffect(() => {
 		if (sort.name === '') {
 			setDisplayFile(files)

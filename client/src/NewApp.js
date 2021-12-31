@@ -96,7 +96,7 @@ function App() {
 
 		try {
 			// setShowModal(true)
-			const res = await axios.post('/api/file', formdata, {
+			const res = await axios.post('https://storage.cscms.me/api/file', formdata, {
 				onUploadProgress: progressEvent => {
 					const uploadPercent = Math.round(
 						(progressEvent.loaded / progressEvent.total) * 100
@@ -122,7 +122,7 @@ function App() {
 
 		try {
 			// setShowModal(true)
-			const res = await axios.post('/api/image', formdata, {
+			const res = await axios.post('https://storage.cscms.me/api/image', formdata, {
 				onUploadProgress: progressEvent => {
 					const uploadPercent = Math.round(
 						(progressEvent.loaded / progressEvent.total) * 100

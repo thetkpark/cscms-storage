@@ -85,7 +85,7 @@ const UploadContainer = ({ type, handleUpload, setError }) => {
 						height: '50px',
 						marginTop: '2rem'
 					}}
-					onClick={onClick}
+					action={onClick}
 				>
 					<Icon name="upload" role="icon" /> Upload
 				</Button>

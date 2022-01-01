@@ -84,7 +84,7 @@ const UploadContainer = ({ type, handleUpload, setError, progress }) => {
 						fontSize: '.9rem',
 						width: '170px',
 						height: '50px',
-						marginTop: '2rem'
+						marginTop: '1rem'
 					}}
 					action={onClick}
 				>
@@ -92,7 +92,7 @@ const UploadContainer = ({ type, handleUpload, setError, progress }) => {
 				</Button>
 			</div>
 			{type === 'file' ? (
-				<div style={{ marginTop: '3rem', display: 'flex', justifyContent: 'center' }}>
+				<div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}>
 					<div style={{ width: '280px', padding: '0 3rem' }}>
 						<div
 							style={{

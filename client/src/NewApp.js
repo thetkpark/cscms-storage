@@ -16,7 +16,7 @@ function App() {
 	const [route, setRoute] = useState('file')
 	const [auth, setAuth] = useRecoilState(authState)
 	const [dialog, setDialog] = useState(null)
-	const [progress, setProgress] = useState(0)
+	const [progress, setProgress] = useState(-1)
 	const [error, setError] = useState(null)
 	useEffect(() => {
 		ReactGA.initialize('G-S7NPY62JTS')
@@ -109,6 +109,7 @@ function App() {
 				params: { slug, duration }
 			})
 			// setFileData(res.data)
+			setProgress(-1)
 
 			ReactGA.event({
 				category: 'file',
@@ -134,6 +135,7 @@ function App() {
 				}
 			})
 			// setFileData(res.data)
+			setProgress(-1)
 
 			ReactGA.event({
 				category: 'file',

@@ -89,7 +89,7 @@ const UploadContainer = ({ type, handleUpload, setError, progress }) => {
 						fontSize: '.9rem',
 						width: '170px',
 						height: '50px',
-						marginTop: '1rem'
+						marginTop: '2rem'
 					}}
 					action={onClick}
 				>

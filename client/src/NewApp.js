@@ -176,7 +176,7 @@ function App() {
 			<div className={styles.App}>
 				<div className={styles.Wrapper}>
 					<Navbar auth={auth.isAuthenticated} handleAction={handleAction} />
-					<div style={{ padding: '2rem 8rem', display: 'flex', flexDirection: 'column' }}>
+					<div style={{ padding: '1rem 8rem', display: 'flex', flexDirection: 'column' }}>
 						{auth.isAuthenticated ? (
 							<UserProfile user={auth.user} handleChangeRoute={handleChangeRoute} />
 						) : null}

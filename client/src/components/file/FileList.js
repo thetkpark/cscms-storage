@@ -15,7 +15,7 @@ const FileList = () => {
 		const fileRes = await axios.get('https://storage.cscms.me/api/file')
 		const fileData = fileRes.data
 		const imageRes = await axios.get('https://storage.cscms.me/api/image')
-		const imageData = imageRes.data
+		const imageData = imageRes.data.map(image => ({ ...image, file_type: 'image' }))
 		setFiles([...fileData, ...imageData])
 	}
 	useEffect(() => {
@@ -97,7 +97,9 @@ const FileList = () => {
 							{displayFile.length === 0 ? (
 								<Fragment>
 									<tr>
-										<td className={styles.Empty} colSpan={4}>No files found</td>
+										<td className={styles.Empty} colSpan={4}>
+											No files found
+										</td>
 									</tr>
 								</Fragment>
 							) : (

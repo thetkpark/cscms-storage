@@ -41,9 +41,10 @@ const UploadContainer = ({ type, handleUpload, setError, progress }) => {
 			await handleUpload({
 				selectedFile,
 				slug,
-				duration
+				duration,
+				clearFile: () => setSelectedFile(null)
 			})
-			setSelectedFile(null)
+			
 		} catch (err) {
 			setError(err.response.data.message)
 		}

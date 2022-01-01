@@ -16,7 +16,7 @@ function App() {
 	const [route, setRoute] = useState('file')
 	const [auth, setAuth] = useRecoilState(authState)
 	const [dialog, setDialog] = useState(null)
-	const [progress, setProgress] = useState(0)
+	const [progress, setProgress] = useState(-1)
 	const [error, setError] = useState(null)
 	useEffect(() => {
 		ReactGA.initialize('G-S7NPY62JTS')
@@ -87,10 +87,14 @@ function App() {
 		setRoute(newRoute)
 	}
 	const handleUpload = data => {
-		if (route === 'file') {
-			handleUploadFile(data)
-		} else if (route === 'image') {
-			handleUploadImage(data)
+		try {
+			if (route === 'file') {
+				handleUploadFile(data)
+			} else if (route === 'image') {
+				handleUploadImage(data)
+			}
+		} catch (err) {
+			throw err
 		}
 	}
 	const handleUploadFile = async ({ selectedFile, slug, duration }) => {
@@ -109,6 +113,7 @@ function App() {
 				params: { slug, duration }
 			})
 			// setFileData(res.data)
+			setProgress(-1)
 
 			ReactGA.event({
 				category: 'file',
@@ -116,7 +121,7 @@ function App() {
 				value: selectedFile.size
 			})
 		} catch (err) {
-			setError(err.response.data.message)
+			throw err
 		}
 	}
 	const handleUploadImage = async ({ selectedFile }) => {
@@ -134,6 +139,7 @@ function App() {
 				}
 			})
 			// setFileData(res.data)
+			setProgress(-1)
 
 			ReactGA.event({
 				category: 'file',
@@ -141,7 +147,7 @@ function App() {
 				value: selectedFile.size
 			})
 		} catch (err) {
-			setError(err.response.data.message)
+			throw err
 		}
 	}
 	const renderScreen = () => {

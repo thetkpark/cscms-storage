@@ -13,12 +13,12 @@ const UploadContainer = ({ type, handleUpload, setError, progress }) => {
 	}, [type])
 	const onDrop = (acceptedFiles, rejectedFiles) => {
 		if (acceptedFiles.length === 1) {
-			if(type === 'image') {
-				if(acceptedFiles[0].type.includes('image')) {
+			if (type === 'image') {
+				if (acceptedFiles[0].type.includes('image')) {
 					setSelectedFile(acceptedFiles[0])
 				} else {
 					setError('Please upload an image')
-					return;
+					return
 				}
 			}
 			setSelectedFile(acceptedFiles[0])
@@ -28,20 +28,25 @@ const UploadContainer = ({ type, handleUpload, setError, progress }) => {
 			} else if (rejectedFiles[0].errors[0].code === 'file-too-large') {
 				setError('File too big. The size limit is 100MB')
 			} else setError('File not accepted')
-			return;
+			return
 		}
 	}
-	const onClick = e => {
+	const onClick = async e => {
 		e.preventDefault()
 		if (!selectedFile) {
 			setError('Please select a file')
 			return
 		}
-		handleUpload({
-			selectedFile,
-			slug,
-			duration
-		})
+		try {
+			await handleUpload({
+				selectedFile,
+				slug,
+				duration
+			})
+			setSelectedFile(null)
+		} catch (err) {
+			setError(err.response.data.message)
+		}
 	}
 	return (
 		<div
@@ -84,7 +89,7 @@ const UploadContainer = ({ type, handleUpload, setError, progress }) => {
 						fontSize: '.9rem',
 						width: '170px',
 						height: '50px',
-						marginTop: '2rem'
+						marginTop: '1rem'
 					}}
 					action={onClick}
 				>
@@ -92,7 +97,7 @@ const UploadContainer = ({ type, handleUpload, setError, progress }) => {
 				</Button>
 			</div>
 			{type === 'file' ? (
-				<div style={{ marginTop: '3rem', display: 'flex', justifyContent: 'center' }}>
+				<div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}>
 					<div style={{ width: '280px', padding: '0 3rem' }}>
 						<div
 							style={{

@@ -97,12 +97,11 @@ function App() {
 			throw err
 		}
 	}
-	const handleUploadFile = async ({ selectedFile, slug, duration }) => {
+	const handleUploadFile = async ({ selectedFile, slug, duration, clearFile }) => {
 		const formdata = new FormData()
 		formdata.append('file', selectedFile)
 
 		try {
-			// setShowModal(true)
 			const res = await axios.post('https://storage.cscms.me/api/file', formdata, {
 				onUploadProgress: progressEvent => {
 					const uploadPercent = Math.round(
@@ -112,9 +111,8 @@ function App() {
 				},
 				params: { slug, duration }
 			})
-			// setFileData(res.data)
 			setProgress(-1)
-
+			clearFile()
 			ReactGA.event({
 				category: 'file',
 				action: 'Upload file',
@@ -124,12 +122,11 @@ function App() {
 			throw err
 		}
 	}
-	const handleUploadImage = async ({ selectedFile }) => {
+	const handleUploadImage = async ({ selectedFile, clearFile }) => {
 		const formdata = new FormData()
 		formdata.append('image', selectedFile)
 
 		try {
-			// setShowModal(true)
 			const res = await axios.post('https://storage.cscms.me/api/image', formdata, {
 				onUploadProgress: progressEvent => {
 					const uploadPercent = Math.round(
@@ -138,9 +135,8 @@ function App() {
 					setProgress(uploadPercent)
 				}
 			})
-			// setFileData(res.data)
 			setProgress(-1)
-
+			clearFile()
 			ReactGA.event({
 				category: 'file',
 				action: 'Upload file',

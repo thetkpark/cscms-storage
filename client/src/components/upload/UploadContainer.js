@@ -4,7 +4,7 @@ import Button from '../util/Button'
 import Icon from '../util/Icon'
 import { Slider, TextField } from '@material-ui/core'
 import FileDetail from './FileDetail'
-const UploadContainer = ({ type, handleUpload, setError }) => {
+const UploadContainer = ({ type, handleUpload, setError, progress }) => {
 	const [selectedFile, setSelectedFile] = useState(null)
 	const [duration, setDuration] = useState(7)
 	const [slug, setSlug] = useState('')
@@ -68,6 +68,7 @@ const UploadContainer = ({ type, handleUpload, setError }) => {
 					type={type}
 					selectedFilename={selectedFile ? selectedFile.name : ''}
 					onDrop={onDrop}
+					progress={progress}
 				/>
 				{selectedFile ? (
 					<FileDetail

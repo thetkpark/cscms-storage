@@ -69,11 +69,14 @@ function App() {
 				setDialog('login')
 				break
 			case 'logout':
-				axios.get("https://storage.cscms.me/auth/logout").then(() => {
-					setAuth(false)
-				}).catch(err => {
-					console.log(err)
-				})
+				axios
+					.get('https://storage.cscms.me/auth/logout')
+					.then(() => {
+						setAuth(false)
+					})
+					.catch(err => {
+						console.log(err)
+					})
 				break
 			default:
 				break
@@ -146,7 +149,12 @@ function App() {
 			case 'file':
 			case 'image':
 				return (
-					<UploadContainer type={route} handleUpload={handleUpload} setError={setError} />
+					<UploadContainer
+						type={route}
+						handleUpload={handleUpload}
+						setError={setError}
+						progress={progress}
+					/>
 				)
 			case 'myfile':
 				if (auth.isAuthenticated) return <FileList />

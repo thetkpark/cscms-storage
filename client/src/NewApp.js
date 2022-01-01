@@ -113,6 +113,7 @@ function App() {
 			})
 			setProgress(-1)
 			clearFile()
+			Swal.fire("Upload Image Success", res.data.token, "success")
 			ReactGA.event({
 				category: 'file',
 				action: 'Upload file',
@@ -137,6 +138,7 @@ function App() {
 			})
 			setProgress(-1)
 			clearFile()
+			Swal.fire("Upload Image Success", res.data.file_path, "success")
 			ReactGA.event({
 				category: 'file',
 				action: 'Upload file',

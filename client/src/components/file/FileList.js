@@ -59,7 +59,7 @@ const FileList = () => {
 				<div>
 					<table className={styles.FileList}>
 						<thead>
-							<tr className={styles.Row}>
+							<tr>
 								<th>
 									<div onClick={() => handleSort('filename')}>
 										Name{' '}
@@ -103,7 +103,7 @@ const FileList = () => {
 							) : (
 								displayFile.map((file, index) => {
 									return (
-										<tr key={index}>
+										<tr key={index} className={styles.Row}>
 											<td>
 												<FileIcon
 													ext={file.filename.split('.')[1]}

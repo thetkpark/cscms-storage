@@ -1,7 +1,8 @@
+import { Box, LinearProgress } from '@material-ui/core'
 import React, { Fragment } from 'react'
 import { useDropzone } from 'react-dropzone'
 import styles from '../../styles/upload/Dropzone.module.css'
-const DropZone = ({ onDrop, selectedFilename, type }) => {
+const DropZone = ({ onDrop, selectedFilename, type, progress }) => {
 	const { getRootProps, getInputProps, isDragActive } = useDropzone({
 		onDrop,
 		maxFiles: 1,
@@ -42,16 +43,34 @@ const DropZone = ({ onDrop, selectedFilename, type }) => {
 		if (isDragActive) {
 			return styles.drag
 		}
-        if (selectedFilename.length !== 0) {
-            return styles.active
-        }
+		if (selectedFilename.length !== 0) {
+			return styles.active
+		}
 		return ''
+	}
+
+	const renderProgressBar = () => {
+		return (
+			<Fragment>
+				<Box sx={{ display: 'flex', alignItems: 'center' }}>
+					<Box sx={{ width: '100%', mr: 1 }}>
+						<LinearProgress variant="determinate" value={progress} />
+					</Box>
+					<Box sx={{ minWidth: 70 }}>
+						{`${progress === 100 ? 'Encrypting...' : 'Uploading...'}`}
+					</Box>
+				</Box>
+			</Fragment>
+		)
 	}
 
 	return (
 		<div className={`${styles.Dropzone} ${getClassName()}`} {...getRootProps()}>
 			<input className="dropzone-input" {...getInputProps()} />
-			<div className={styles.DropZoneTextContainer}>{renderContainerText()}</div>
+			<div className={styles.DropZoneTextContainer}>
+				{renderContainerText()}
+				{progress !== -1 ? renderProgressBar() : null}
+			</div>
 		</div>
 	)
 }

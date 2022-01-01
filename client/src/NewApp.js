@@ -87,10 +87,14 @@ function App() {
 		setRoute(newRoute)
 	}
 	const handleUpload = data => {
-		if (route === 'file') {
-			handleUploadFile(data)
-		} else if (route === 'image') {
-			handleUploadImage(data)
+		try {
+			if (route === 'file') {
+				handleUploadFile(data)
+			} else if (route === 'image') {
+				handleUploadImage(data)
+			}
+		} catch (err) {
+			throw err
 		}
 	}
 	const handleUploadFile = async ({ selectedFile, slug, duration }) => {
@@ -117,7 +121,7 @@ function App() {
 				value: selectedFile.size
 			})
 		} catch (err) {
-			setError(err.response.data.message)
+			throw err
 		}
 	}
 	const handleUploadImage = async ({ selectedFile }) => {
@@ -143,7 +147,7 @@ function App() {
 				value: selectedFile.size
 			})
 		} catch (err) {
-			setError(err.response.data.message)
+			throw err
 		}
 	}
 	const renderScreen = () => {

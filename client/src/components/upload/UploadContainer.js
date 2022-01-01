@@ -13,12 +13,12 @@ const UploadContainer = ({ type, handleUpload, setError, progress }) => {
 	}, [type])
 	const onDrop = (acceptedFiles, rejectedFiles) => {
 		if (acceptedFiles.length === 1) {
-			if(type === 'image') {
-				if(acceptedFiles[0].type.includes('image')) {
+			if (type === 'image') {
+				if (acceptedFiles[0].type.includes('image')) {
 					setSelectedFile(acceptedFiles[0])
 				} else {
 					setError('Please upload an image')
-					return;
+					return
 				}
 			}
 			setSelectedFile(acceptedFiles[0])
@@ -28,7 +28,7 @@ const UploadContainer = ({ type, handleUpload, setError, progress }) => {
 			} else if (rejectedFiles[0].errors[0].code === 'file-too-large') {
 				setError('File too big. The size limit is 100MB')
 			} else setError('File not accepted')
-			return;
+			return
 		}
 	}
 	const onClick = async e => {
@@ -37,12 +37,16 @@ const UploadContainer = ({ type, handleUpload, setError, progress }) => {
 			setError('Please select a file')
 			return
 		}
-		await handleUpload({
-			selectedFile,
-			slug,
-			duration
-		})
-		setSelectedFile(null)
+		try {
+			await handleUpload({
+				selectedFile,
+				slug,
+				duration
+			})
+			setSelectedFile(null)
+		} catch (err) {
+			setError(err.response.data.message)
+		}
 	}
 	return (
 		<div

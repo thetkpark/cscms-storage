@@ -31,17 +31,18 @@ const UploadContainer = ({ type, handleUpload, setError, progress }) => {
 			return;
 		}
 	}
-	const onClick = e => {
+	const onClick = async e => {
 		e.preventDefault()
 		if (!selectedFile) {
 			setError('Please select a file')
 			return
 		}
-		handleUpload({
+		await handleUpload({
 			selectedFile,
 			slug,
 			duration
 		})
+		setSelectedFile(null)
 	}
 	return (
 		<div

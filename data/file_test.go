@@ -19,7 +19,7 @@ type GormFileDataStoreTestSuite struct {
 	store   *GormFileDataStore
 	user    *model.User
 	file    *model.File
-	ownFile *[]model.File
+	ownFile []model.File
 }
 
 func createTestFile(userID uint, expired bool) *model.File {
@@ -33,12 +33,9 @@ func createTestFile(userID uint, expired bool) *model.File {
 		Filename:  faker.Username(),
 		FileSize:  uint64(rand.Uint32()),
 		Visited:   uint(rand.Uint32()),
-		UserID:    0,
 		FileType:  faker.Currency(),
 		Encrypted: rand.Int() > rand.Int(),
-	}
-	if userID != 0 {
-		file.UserID = userID
+		UserID:    userID,
 	}
 	if expired {
 		file.ExpiredAt = time.Now().Add(-1 * time.Hour)
@@ -62,7 +59,7 @@ func (s *GormFileDataStoreTestSuite) SetupTest() {
 
 	s.user = createTestUser("github")
 	s.file = createTestFile(0, false)
-	s.ownFile = &[]model.File{
+	s.ownFile = []model.File{
 		*createTestFile(s.user.ID, false),
 		*createTestFile(s.user.ID, false),
 		*createTestFile(s.user.ID, true),
@@ -123,7 +120,7 @@ func (s *GormFileDataStoreTestSuite) TestFindByTokenExpired() {
 func (s *GormFileDataStoreTestSuite) TestFindByUserID() {
 	files, err := s.store.FindByUserID(s.user.ID)
 	require.NoError(s.T(), err)
-	require.Nil(s.T(), deep.Equal(files, s.ownFile))
+	require.Nil(s.T(), deep.Equal(*files, s.ownFile))
 }
 
 func (s *GormFileDataStoreTestSuite) TestFindByUserIDEmpty() {

@@ -1,7 +1,6 @@
 package data
 
 import (
-	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/bxcodec/faker/v3"
 	"github.com/go-test/deep"
 	"github.com/stretchr/testify/require"
@@ -19,10 +18,9 @@ const SqlitePath = "test.db"
 
 type GormUserDataStoreTestSuite struct {
 	suite.Suite
-	db      *gorm.DB
-	store   *GormUserDataStore
-	user    *model.User
-	userRow *sqlmock.Rows
+	db    *gorm.DB
+	store *GormUserDataStore
+	user  *model.User
 }
 
 func createUser(provider string) *model.User {

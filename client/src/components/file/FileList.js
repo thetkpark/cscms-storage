@@ -4,7 +4,7 @@ import Icon from '../util/Icon'
 import axios from 'axios'
 import FileDetail from './FileDetail'
 import ImageDetail from './ImageDetail'
-const FileList = () => {
+const FileList = ({setError}) => {
 	const [sort, setSort] = useState({ name: '', asc: true })
 	const [files, setFiles] = useState([])
 	const [displayFile, setDisplayFile] = useState([])
@@ -258,9 +258,9 @@ const FileList = () => {
 									return (
 										<tr key={index} className={styles.Row}>
 											{file.type === 'file' ? (
-												<FileDetail file={file} />
+												<FileDetail setError={setError} file={file} />
 											) : (
-												<ImageDetail file={file} />
+												<ImageDetail setError={setError} file={file} />
 											)}
 										</tr>
 									)

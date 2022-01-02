@@ -77,7 +77,7 @@ function App() {
 						setAuth(false)
 					})
 					.catch(err => {
-						console.log(err)
+						setError(err.response.data.message)
 					})
 				break
 			default:
@@ -218,7 +218,7 @@ function App() {
 					/>
 				)
 			case 'myfile':
-				if (auth.isAuthenticated) return <FileList />
+				if (auth.isAuthenticated) return <FileList setError={setError} />
 				setRoute('file')
 				break
 			default:

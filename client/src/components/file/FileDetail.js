@@ -35,6 +35,7 @@ const FileDetail = ({ file, setError }) => {
 		Swal.fire({
 			title: 'Edit slug',
 			input: 'text',
+			inputValue: file.token,
 			inputValidator: value => {
 				if (!value) {
 					return 'Slug is required'

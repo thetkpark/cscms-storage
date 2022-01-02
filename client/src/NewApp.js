@@ -25,24 +25,24 @@ function App() {
 		ReactGA.pageview(window.location.pathname)
 	}, [])
 	useEffect(() => {
-		axios
-			.get('https://storage.cscms.me/auth/user')
-			.then(res => {
-				setAuth({
-					isAuthenticated: true,
-					user: {
-						name: res.data.username,
-						image: res.data.avatar_url,
-						email: res.data.email
-					}
-				})
-			})
-			.catch(err => {
-				setAuth({
-					isAuthenticated: false,
-					user: null
-				})
-			})
+		// axios
+		// 	.get('https://storage.cscms.me/auth/user')
+		// 	.then(res => {
+		// 		setAuth({
+		// 			isAuthenticated: true,
+		// 			user: {
+		// 				name: res.data.username,
+		// 				image: res.data.avatar_url,
+		// 				email: res.data.email
+		// 			}
+		// 		})
+		// 	})
+		// 	.catch(err => {
+		// 		setAuth({
+		// 			isAuthenticated: false,
+		// 			user: null
+		// 		})
+		// 	})
 	}, [])
 	useEffect(() => {
 		if (auth.isAuthenticated) {

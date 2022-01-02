@@ -23,11 +23,13 @@ const ImageDetail = ({ file }) => {
 			<td>{formatFileSize(file.file_size)}</td>
 			<td>{formatDate(file.updated_at)}</td>
 			<td>
-				<div>
-					<Icon name="delete" />
-				</div>
-				<div onClick={copyToClipboard}>
-					<Icon name="copy" />
+				<div style={{display:'flex'}}>
+					<div>
+						<Icon name="delete" />
+					</div>
+					<div onClick={copyToClipboard}>
+						<Icon name="copy" />
+					</div>
 				</div>
 			</td>
 		</Fragment>

@@ -156,7 +156,7 @@ func main() {
 	// User Authentication with Oauth
 	goth.UseProviders(
 		github.New(appENVs.OauthGitHubClientSecret, appENVs.OauthGitHubSecretKey, fmt.Sprintf("%s/auth/github/callback", appENVs.Entrypoint), "user:email"),
-		google.New(appENVs.OAuthGoogleClientSecret, appENVs.OAuthGoogleSecretKey, fmt.Sprintf("%s/auth/google/callback", appENVs.Entrypoint), "userinfo.email", "userinfo.profile"))
+		google.New(appENVs.OAuthGoogleClientSecret, appENVs.OAuthGoogleSecretKey, fmt.Sprintf("%s/auth/google/callback", appENVs.Entrypoint), "email", "profile"))
 
 	authPath := app.Group("/auth")
 	authPath.Get("/logout", authHandler.Logout)

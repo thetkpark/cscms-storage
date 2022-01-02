@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"gorm.io/gorm"
-	"os"
 	"testing"
 )
 
@@ -24,7 +23,7 @@ func TestGormFileDataStore(t *testing.T) {
 }
 
 func (s *GormFileDataStoreTestSuite) SetupTest() {
-	gormDB, err := createGormDB()
+	gormDB, err := createTestGormDB()
 	require.NoError(s.T(), err)
 	s.db = gormDB
 
@@ -46,7 +45,7 @@ func (s *GormFileDataStoreTestSuite) SetupTest() {
 }
 
 func (s *GormFileDataStoreTestSuite) AfterTest(_, _ string) {
-	require.NoError(s.T(), os.Remove(SqlitePath))
+	require.NoError(s.T(), destroyTestGormDB())
 }
 
 func (s *GormFileDataStoreTestSuite) TestCreate() {

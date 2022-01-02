@@ -14,9 +14,13 @@ import (
 
 const SqlitePath = "test.db"
 
-func createGormDB() (*gorm.DB, error) {
+func createTestGormDB() (*gorm.DB, error) {
 	gormLogger := logger.New(log.New(os.Stdout, "\r\n", log.LstdFlags), logger.Config{IgnoreRecordNotFoundError: true})
 	return gorm.Open(sqlite.Open(SqlitePath), &gorm.Config{Logger: gormLogger})
+}
+
+func destroyTestGormDB() error {
+	return os.Remove(SqlitePath)
 }
 
 func createTestUser(provider string) *model.User {

@@ -43,11 +43,8 @@ func (store *GormFileDataStore) FindByID(fileID string) (*model.File, error) {
 	tx := store.db.Where(&model.File{ID: fileID}).First(&file)
 	if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 		return nil, nil
-	} else if tx.Error != nil {
-		return nil, tx.Error
 	}
-
-	return &file, nil
+	return &file, tx.Error
 }
 
 func (store *GormFileDataStore) FindByToken(token string) (*model.File, error) {
@@ -64,9 +61,6 @@ func (store *GormFileDataStore) FindByToken(token string) (*model.File, error) {
 		}
 	}
 
-	if file == nil {
-		return nil, nil
-	}
 	return file, nil
 }
 
@@ -86,10 +80,7 @@ func (store *GormFileDataStore) IncreaseVisited(id string) error {
 		"visited":    gorm.Expr("visited + ?", 1),
 		"updated_at": time.Now().UTC(),
 	})
-	if tx.Error != nil {
-		return tx.Error
-	}
-	return nil
+	return tx.Error
 }
 
 func (store *GormFileDataStore) UpdateToken(fileID string, newToken string) error {

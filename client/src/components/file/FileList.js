@@ -21,10 +21,10 @@ const FileList = () => {
 		const imageRes = await axios.get('https://storage.cscms.me/api/image')
 		const imageData = imageRes.data.map(image => ({
 			...image,
+			type: 'image',
 			url: 'https://img.cscms.me/' + image.file_path,
 			file_type: 'image',
-			filename: image.original_filename,
-			type: 'image'
+			filename: image.original_filename
 		}))
 		setFiles([...fileData, ...imageData])
 	}
@@ -70,7 +70,7 @@ const FileList = () => {
 					<table className={styles.FileList}>
 						<thead>
 							<tr>
-								<th>
+								<th style={{ width: '35%' }}>
 									<div onClick={() => handleSort('filename')}>
 										Name{' '}
 										{sort.name === 'filename' && sort.asc ? (
@@ -80,7 +80,7 @@ const FileList = () => {
 										)}
 									</div>
 								</th>
-								<th>
+								<th style={{ width: '10%' }}>
 									<div onClick={() => handleSort('file_size')}>
 										Size{' '}
 										{sort.name === 'file_size' && sort.asc ? (
@@ -90,7 +90,7 @@ const FileList = () => {
 										)}
 									</div>
 								</th>
-								<th>
+								<th style={{ width: '25%' }}>
 									<div onClick={() => handleSort('updated_at')}>
 										Last Modified{' '}
 										{sort.name === 'updated_at' && sort.asc ? (
@@ -100,7 +100,7 @@ const FileList = () => {
 										)}
 									</div>
 								</th>
-								<th></th>
+								<th style={{ width: '30%' }}></th>
 							</tr>
 						</thead>
 						<tbody>

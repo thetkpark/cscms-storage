@@ -1,16 +1,13 @@
 package data
 
 import (
-	"github.com/bxcodec/faker/v3"
 	"github.com/go-test/deep"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"gorm.io/gorm"
-	"math/rand"
 	"os"
 	"testing"
-	"time"
 )
 
 type GormFileDataStoreTestSuite struct {
@@ -20,27 +17,6 @@ type GormFileDataStoreTestSuite struct {
 	user     *model.User
 	file     *model.File
 	ownFiles []model.File
-}
-
-func createTestFile(userID uint, expired bool) *model.File {
-	file := &model.File{
-		ID:        faker.Password(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		ExpiredAt: time.Now().Add(time.Hour),
-		Token:     faker.Password(),
-		Nonce:     faker.UUIDDigit(),
-		Filename:  faker.Username(),
-		FileSize:  uint64(rand.Uint32()),
-		Visited:   uint(rand.Uint32()),
-		FileType:  faker.Currency(),
-		Encrypted: rand.Int() > rand.Int(),
-		UserID:    userID,
-	}
-	if expired {
-		file.ExpiredAt = time.Now().Add(-1 * time.Hour)
-	}
-	return file
 }
 
 func TestGormFileDataStore(t *testing.T) {

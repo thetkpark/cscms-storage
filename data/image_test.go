@@ -1,16 +1,13 @@
 package data
 
 import (
-	"github.com/bxcodec/faker/v3"
 	"github.com/go-test/deep"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"gorm.io/gorm"
-	"math/rand"
 	"os"
 	"testing"
-	"time"
 )
 
 type GormImageDataStoreTestSuite struct {
@@ -24,19 +21,6 @@ type GormImageDataStoreTestSuite struct {
 
 func TestGormImageDataStore(t *testing.T) {
 	suite.Run(t, new(GormImageDataStoreTestSuite))
-}
-
-func createTestImage(userID uint) *model.Image {
-	return &model.Image{
-		ID:               uint(rand.Uint32()),
-		CreatedAt:        time.Now(),
-		UpdatedAt:        time.Now(),
-		OriginalFilename: faker.Username(),
-		FileSize:         uint64(rand.Uint32()),
-		FilePath:         faker.Password() + ".png",
-		UserID:           userID,
-		DeletedAt:        gorm.DeletedAt{},
-	}
 }
 
 func (s *GormImageDataStoreTestSuite) SetupTest() {

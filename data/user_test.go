@@ -6,43 +6,16 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/thetkpark/cscms-temp-storage/data/model"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
-	"log"
-	"math/rand"
 	"os"
 	"testing"
-	"time"
 )
-
-const SqlitePath = "test.db"
 
 type GormUserDataStoreTestSuite struct {
 	suite.Suite
 	db    *gorm.DB
 	store *GormUserDataStore
 	user  *model.User
-}
-
-func createTestUser(provider string) *model.User {
-	return &model.User{
-		ID:        uint(rand.Uint32()),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		Email:     faker.Email(),
-		Username:  faker.Username(),
-		Provider:  provider,
-		AvatarURL: faker.URL(),
-		Files:     nil,
-		Images:    nil,
-		APIKey:    faker.UUIDDigit(),
-	}
-}
-
-func createGormDB() (*gorm.DB, error) {
-	gormLogger := logger.New(log.New(os.Stdout, "\r\n", log.LstdFlags), logger.Config{IgnoreRecordNotFoundError: true})
-	return gorm.Open(sqlite.Open(SqlitePath), &gorm.Config{Logger: gormLogger})
 }
 
 func TestGormUserDataStore(t *testing.T) {

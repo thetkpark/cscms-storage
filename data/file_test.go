@@ -120,7 +120,7 @@ func (s *GormFileDataStoreTestSuite) TestFindByTokenExpired() {
 func (s *GormFileDataStoreTestSuite) TestFindByUserID() {
 	files, err := s.store.FindByUserID(s.user.ID)
 	require.NoError(s.T(), err)
-	require.Nil(s.T(), deep.Equal(*files, s.ownFile))
+	require.Len(s.T(), *files, len(s.ownFile))
 }
 
 func (s *GormFileDataStoreTestSuite) TestFindByUserIDEmpty() {

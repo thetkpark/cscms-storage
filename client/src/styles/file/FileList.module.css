@@ -31,7 +31,6 @@
     background: white;
 }
 .FileList thead th {
-	width: 30%;
 	text-align: left;
 	padding: 0.5rem 1rem;
 	font-weight: 500;
@@ -56,13 +55,6 @@
 }
 .FileList td svg {
 	margin-right: 0.5rem;
-}
-.FileList th:last-child {
-	width: 10%;
-}
-.EditIcon {
-	cursor: pointer;
-	user-select: none;
 }
 .Empty {
 	text-align: center;

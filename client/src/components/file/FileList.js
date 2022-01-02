@@ -1,9 +1,9 @@
 import { Fragment, useEffect, useState } from 'react'
-import FileIcon from '../util/FileIcon'
-import { formatFileSize } from '../../utils/formatFileSize'
 import styles from '../../styles/file/FileList.module.css'
 import Icon from '../util/Icon'
 import axios from 'axios'
+import FileDetail from './FileDetail'
+import ImageDetail from './ImageDetail'
 const FileList = () => {
 	const [sort, setSort] = useState({ name: '', asc: true })
 	const [files, setFiles] = useState([])
@@ -13,9 +13,19 @@ const FileList = () => {
 	}, [])
 	const fetchFiles = async () => {
 		const fileRes = await axios.get('https://storage.cscms.me/api/file')
-		const fileData = fileRes.data
+		const fileData = fileRes.data.map(file => ({
+			...file,
+			type: 'file',
+			url: 'https://storage.cscms.me/' + file.token
+		}))
 		const imageRes = await axios.get('https://storage.cscms.me/api/image')
-		const imageData = imageRes.data.map(image => ({ ...image, file_type: 'image' }))
+		const imageData = imageRes.data.map(image => ({
+			...image,
+			type: 'image',
+			url: 'https://img.cscms.me/' + image.file_path,
+			file_type: 'image',
+			filename: image.original_filename
+		}))
 		setFiles([...fileData, ...imageData])
 	}
 	useEffect(() => {
@@ -60,7 +70,7 @@ const FileList = () => {
 					<table className={styles.FileList}>
 						<thead>
 							<tr>
-								<th>
+								<th style={{ width: '35%' }}>
 									<div onClick={() => handleSort('filename')}>
 										Name{' '}
 										{sort.name === 'filename' && sort.asc ? (
@@ -70,7 +80,7 @@ const FileList = () => {
 										)}
 									</div>
 								</th>
-								<th>
+								<th style={{ width: '10%' }}>
 									<div onClick={() => handleSort('file_size')}>
 										Size{' '}
 										{sort.name === 'file_size' && sort.asc ? (
@@ -80,7 +90,7 @@ const FileList = () => {
 										)}
 									</div>
 								</th>
-								<th>
+								<th style={{ width: '25%' }}>
 									<div onClick={() => handleSort('updated_at')}>
 										Last Modified{' '}
 										{sort.name === 'updated_at' && sort.asc ? (
@@ -90,7 +100,7 @@ const FileList = () => {
 										)}
 									</div>
 								</th>
-								<th></th>
+								<th style={{ width: '30%' }}></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -106,20 +116,11 @@ const FileList = () => {
 								displayFile.map((file, index) => {
 									return (
 										<tr key={index} className={styles.Row}>
-											<td>
-												<FileIcon
-													ext={file.filename.split('.')[1]}
-													type={file.file_type}
-												/>{' '}
-												{file.filename}
-											</td>
-											<td>{formatFileSize(file.file_size)}</td>
-											<td>{file.updated_at}</td>
-											<td>
-												<div className={styles.EditIcon}>
-													<Icon name="edit" />
-												</div>
-											</td>
+											{file.type === 'file' ? (
+												<FileDetail file={file} />
+											) : (
+												<ImageDetail file={file} />
+											)}
 										</tr>
 									)
 								})

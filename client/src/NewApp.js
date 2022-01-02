@@ -12,6 +12,8 @@ import axios from 'axios'
 import Swal from 'sweetalert2'
 import FileList from './components/file/FileList'
 import UserProfile from './components/auth/UserProfile'
+import { formatFileSize } from './utils/formatFileSize'
+import { formatDate } from './utils/formatText'
 function App() {
 	const [route, setRoute] = useState('file')
 	const [auth, setAuth] = useRecoilState(authState)
@@ -113,7 +115,35 @@ function App() {
 			})
 			setProgress(-1)
 			clearFile()
-			Swal.fire("Upload Image Success", res.data.token, "success")
+			const { token, filename, file_size, expired_at } = res.data
+			var html =
+				'<div style="text-align:left">Download URL: https://storage.cscms.me/' +
+				token +
+				'<br>File name: ' +
+				filename +
+				'<br>File size: ' +
+				formatFileSize(file_size) +
+				'<br>Valid Though: ' +
+				formatDate(expired_at) +
+				'</div>'
+			Swal.fire({
+				title: 'Upload File Success',
+				icon: 'success',
+				html,
+				showCancelButton: true,
+				confirmButtonText: 'Copy URL',
+				cancelButtonText: 'Close'
+			}).then(result => {
+				if (result.isConfirmed) {
+					var copyText = document.createElement('input')
+					copyText.setAttribute('value', 'https://storage.cscms.me/' + token)
+					document.body.appendChild(copyText)
+					copyText.select()
+					copyText.setSelectionRange(0, 99999)
+					navigator.clipboard.writeText(copyText.value)
+					document.body.removeChild(copyText)
+				}
+			})
 			ReactGA.event({
 				category: 'file',
 				action: 'Upload file',
@@ -138,10 +168,37 @@ function App() {
 			})
 			setProgress(-1)
 			clearFile()
-			Swal.fire("Upload Image Success", res.data.file_path, "success")
+			const { file_path, original_filename, file_size } = res.data
+			var html =
+				'<div style="text-align:left">URL: https://img.cscms.me/' +
+				file_path +
+				'<br>File name: ' +
+				original_filename +
+				'<br>File size: ' +
+				formatFileSize(file_size) +
+				'</div>'
+			Swal.fire({
+				title: 'Upload Image Success',
+				icon: 'success',
+				html,
+				width: '600px',
+				showCancelButton: true,
+				confirmButtonText: 'Copy URL',
+				cancelButtonText: 'Close'
+			}).then(result => {
+				if (result.isConfirmed) {
+					var copyText = document.createElement('input')
+					copyText.setAttribute('value', 'https://img.cscms.me/' + file_path)
+					document.body.appendChild(copyText)
+					copyText.select()
+					copyText.setSelectionRange(0, 99999)
+					navigator.clipboard.writeText(copyText.value)
+					document.body.removeChild(copyText)
+				}
+			})
 			ReactGA.event({
-				category: 'file',
-				action: 'Upload file',
+				category: 'image',
+				action: 'Upload Image',
 				value: selectedFile.size
 			})
 		} catch (err) {

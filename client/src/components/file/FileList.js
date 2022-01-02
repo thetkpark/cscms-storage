@@ -13,9 +13,19 @@ const FileList = () => {
 	}, [])
 	const fetchFiles = async () => {
 		const fileRes = await axios.get('https://storage.cscms.me/api/file')
-		const fileData = fileRes.data
+		const fileData = fileRes.data.map(file => ({
+			...file,
+			type: 'file',
+			url: 'https://storage.cscms.me/' + file.token
+		}))
 		const imageRes = await axios.get('https://storage.cscms.me/api/image')
-		const imageData = imageRes.data.map(image => ({ ...image, file_type: 'image' }))
+		const imageData = imageRes.data.map(image => ({
+			...image,
+			url: 'https://img.cscms.me/' + image.file_path,
+			file_type: 'image',
+			filename: image.original_filename,
+			type: 'image'
+		}))
 		setFiles([...fileData, ...imageData])
 	}
 	useEffect(() => {

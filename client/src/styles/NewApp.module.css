@@ -6,3 +6,15 @@
 * {
 	font-family: 'Poppins', sans-serif;
 }
+
+.ContentWrapper {
+	padding: 1rem 8rem;
+	display: flex;
+	flex-direction: column;
+}
+
+@media screen and (max-width: 1024px) {
+	.ContentWrapper {
+		padding: 1rem 2rem 1rem 8rem;
+	}
+}

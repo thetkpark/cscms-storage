@@ -15,11 +15,11 @@ import (
 
 type GormFileDataStoreTestSuite struct {
 	suite.Suite
-	db      *gorm.DB
-	store   *GormFileDataStore
-	user    *model.User
-	file    *model.File
-	ownFile []model.File
+	db       *gorm.DB
+	store    *GormFileDataStore
+	user     *model.User
+	file     *model.File
+	ownFiles []model.File
 }
 
 func createTestFile(userID uint, expired bool) *model.File {
@@ -59,14 +59,14 @@ func (s *GormFileDataStoreTestSuite) SetupTest() {
 
 	s.user = createTestUser("github")
 	s.file = createTestFile(0, false)
-	s.ownFile = []model.File{
+	s.ownFiles = []model.File{
 		*createTestFile(s.user.ID, false),
 		*createTestFile(s.user.ID, false),
 		*createTestFile(s.user.ID, true),
 	}
 	require.NoError(s.T(), s.db.Create(s.user).Error)
 	require.NoError(s.T(), s.db.Create(s.file).Error)
-	require.NoError(s.T(), s.db.Create(&s.ownFile).Error)
+	require.NoError(s.T(), s.db.Create(&s.ownFiles).Error)
 }
 
 func (s *GormFileDataStoreTestSuite) AfterTest(_, _ string) {
@@ -120,7 +120,7 @@ func (s *GormFileDataStoreTestSuite) TestFindByTokenExpired() {
 func (s *GormFileDataStoreTestSuite) TestFindByUserID() {
 	files, err := s.store.FindByUserID(s.user.ID)
 	require.NoError(s.T(), err)
-	require.Len(s.T(), *files, len(s.ownFile))
+	require.Len(s.T(), *files, len(s.ownFiles))
 }
 
 func (s *GormFileDataStoreTestSuite) TestFindByUserIDEmpty() {

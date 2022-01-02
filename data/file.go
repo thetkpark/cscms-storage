@@ -15,6 +15,7 @@ type FileDataStore interface {
 	FindByUserID(userId uint) (*[]model.File, error)
 	DeleteByID(fileId string) error
 	Save(file *model.File) error
+	UpdateToken(fileID string, newToken string) error
 }
 
 type GormFileDataStore struct {
@@ -94,5 +95,10 @@ func (store *GormFileDataStore) IncreaseVisited(id string) error {
 
 func (store *GormFileDataStore) Save(file *model.File) error {
 	tx := store.db.Save(file)
+	return tx.Error
+}
+
+func (store *GormFileDataStore) UpdateToken(fileID string, newToken string) error {
+	tx := store.db.Model(&model.File{}).Where("id", fileID).UpdateColumn("token", newToken)
 	return tx.Error
 }

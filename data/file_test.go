@@ -147,9 +147,9 @@ func (s *GormFileDataStoreTestSuite) TestDeleteByID() {
 	require.ErrorIs(s.T(), s.db.Where("id", s.file.ID).First(&queryFile).Error, gorm.ErrRecordNotFound)
 }
 
-func (s *GormFileDataStoreTestSuite) TestSave() {
+func (s *GormFileDataStoreTestSuite) TestUpdateToken() {
 	s.file.Token = "newToken"
-	require.NoError(s.T(), s.store.Save(s.file))
+	require.NoError(s.T(), s.store.UpdateToken(s.file.ID, s.file.Token))
 	var queryFile model.File
 	require.NoError(s.T(), s.db.Where("token", s.file.Token).First(&queryFile).Error)
 	require.Nil(s.T(), deep.Equal(&queryFile, s.file))

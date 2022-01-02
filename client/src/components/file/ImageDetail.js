@@ -7,7 +7,7 @@ import styles from '../../styles/file/Detail.module.css'
 import Swal from 'sweetalert2'
 import axios from 'axios'
 
-const ImageDetail = ({ file, setError }) => {
+const ImageDetail = ({fetchFiles, file, setError }) => {
 	const copyToClipboard = () => {
 		var copyText = document.createElement('input')
 		copyText.setAttribute('value', file.url)
@@ -21,6 +21,7 @@ const ImageDetail = ({ file, setError }) => {
 		axios
 			.delete(`https://storage.cscms.me/api/image/${file.id}`)
 			.then(() => {
+				fetchFiles();
 				Swal.fire({
 					title: 'Deleted!',
 					text: 'Your image was successfully deleted',

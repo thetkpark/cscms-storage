@@ -7,7 +7,7 @@ import styles from '../../styles/file/Detail.module.css'
 import Swal from 'sweetalert2'
 import axios from 'axios'
 
-const FileDetail = ({ file, setError }) => {
+const FileDetail = ({fetchFiles, file, setError }) => {
 	const copyToClipboard = () => {
 		var copyText = document.createElement('input')
 		copyText.setAttribute('value', file.url)
@@ -21,6 +21,7 @@ const FileDetail = ({ file, setError }) => {
 		axios
 			.patch(`https://storage.cscms.me/api/file/${file.id}?token=${value}`)
 			.then(() => {
+				fetchFiles();
 				Swal.fire({
 					title: 'Updated!',
 					text: 'Your file was successfully updated',
@@ -35,6 +36,7 @@ const FileDetail = ({ file, setError }) => {
 		Swal.fire({
 			title: 'Edit slug',
 			input: 'text',
+			inputValue: file.token,
 			inputValidator: value => {
 				if (!value) {
 					return 'Slug is required'
@@ -54,6 +56,7 @@ const FileDetail = ({ file, setError }) => {
 		axios
 			.delete(`https://storage.cscms.me/api/file/${file.id}`)
 			.then(() => {
+				fetchFiles();
 				Swal.fire({
 					title: 'Deleted!',
 					text: 'Your file was successfully deleted',

@@ -117,9 +117,9 @@ const FileList = ({ setError }) => {
 									return (
 										<tr key={index} className={styles.Row}>
 											{file.type === 'file' ? (
-												<FileDetail setError={setError} file={file} />
+												<FileDetail fetchFiles={fetchFiles} setError={setError} file={file} />
 											) : (
-												<ImageDetail setError={setError} file={file} />
+												<ImageDetail fetchFiles={fetchFiles} setError={setError} file={file} />
 											)}
 										</tr>
 									)

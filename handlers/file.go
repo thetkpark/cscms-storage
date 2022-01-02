@@ -320,7 +320,7 @@ func (h *FileRoutesHandler) EditToken(c *fiber.Ctx) error {
 	}
 
 	fileModel.Token = newToken
-	err = h.fileDataStore.Save(fileModel)
+	err = h.fileDataStore.UpdateToken(fileModel.ID, newToken)
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to save edited file model", err)
 	}

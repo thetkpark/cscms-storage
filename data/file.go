@@ -14,7 +14,6 @@ type FileDataStore interface {
 	IncreaseVisited(id string) error
 	FindByUserID(userId uint) (*[]model.File, error)
 	DeleteByID(fileId string) error
-	Save(file *model.File) error
 	UpdateToken(fileID string, newToken string) error
 }
 
@@ -91,11 +90,6 @@ func (store *GormFileDataStore) IncreaseVisited(id string) error {
 		return tx.Error
 	}
 	return nil
-}
-
-func (store *GormFileDataStore) Save(file *model.File) error {
-	tx := store.db.Save(file)
-	return tx.Error
 }
 
 func (store *GormFileDataStore) UpdateToken(fileID string, newToken string) error {

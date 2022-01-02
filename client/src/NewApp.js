@@ -77,7 +77,7 @@ function App() {
 						setAuth(false)
 					})
 					.catch(err => {
-						console.log(err)
+						setError(err.response.data.message)
 					})
 				break
 			default:
@@ -218,7 +218,7 @@ function App() {
 					/>
 				)
 			case 'myfile':
-				if (auth.isAuthenticated) return <FileList />
+				if (auth.isAuthenticated) return <FileList setError={setError} />
 				setRoute('file')
 				break
 			default:
@@ -229,9 +229,9 @@ function App() {
 	return (
 		<Fragment>
 			<div className={styles.App}>
-				<div className={styles.Wrapper}>
+				<div>
 					<Navbar auth={auth.isAuthenticated} handleAction={handleAction} />
-					<div style={{ padding: '1rem 8rem', display: 'flex', flexDirection: 'column' }}>
+					<div className={styles.ContentWrapper}>
 						{auth.isAuthenticated ? (
 							<UserProfile user={auth.user} handleChangeRoute={handleChangeRoute} />
 						) : null}

@@ -17,6 +17,17 @@ type GormUserDataStoreTestSuite struct {
 	user  *model.User
 }
 
+func TestNewGormUserDataStore(t *testing.T) {
+	db, err := createTestGormDB()
+	require.NoError(t, err)
+	store, err := NewGormUserDataStore(db)
+	require.NoError(t, err)
+	require.NotNil(t, store)
+
+	require.NoError(t, db.Create(createTestUser("github")).Error)
+	require.NoError(t, destroyTestGormDB())
+}
+
 func TestGormUserDataStore(t *testing.T) {
 	suite.Run(t, new(GormUserDataStoreTestSuite))
 }

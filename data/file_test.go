@@ -7,6 +7,7 @@ import (
 	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"gorm.io/gorm"
 	"testing"
+	"time"
 )
 
 type GormFileDataStoreTestSuite struct {
@@ -16,6 +17,17 @@ type GormFileDataStoreTestSuite struct {
 	user     *model.User
 	file     *model.File
 	ownFiles []model.File
+}
+
+func TestNewGormFileDataStore(t *testing.T) {
+	db, err := createTestGormDB()
+	require.NoError(t, err)
+	store, err := NewGormFileDataStore(db, time.Hour)
+	require.NoError(t, err)
+	require.NotNil(t, store)
+
+	require.NoError(t, db.Create(createTestFile(0, false)).Error)
+	require.NoError(t, destroyTestGormDB())
 }
 
 func TestGormFileDataStore(t *testing.T) {

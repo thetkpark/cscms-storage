@@ -18,6 +18,17 @@ type GormImageDataStoreTestSuite struct {
 	ownImages []model.Image
 }
 
+func TestNewGormImageDataStore(t *testing.T) {
+	db, err := createTestGormDB()
+	require.NoError(t, err)
+	store, err := NewGormImageDataStore(db)
+	require.NoError(t, err)
+	require.NotNil(t, store)
+
+	require.NoError(t, db.Create(createTestImage(0)).Error)
+	require.NoError(t, destroyTestGormDB())
+}
+
 func TestGormImageDataStore(t *testing.T) {
 	suite.Run(t, new(GormImageDataStoreTestSuite))
 }

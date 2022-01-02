@@ -13,7 +13,6 @@ type FileDataStore interface {
 	FindByToken(token string) (*model.File, error)
 	IncreaseVisited(id string) error
 	FindByUserID(userId uint) (*[]model.File, error)
-	FindByUserIDAndFileID(userId uint, fileId string) (*model.File, error)
 	DeleteByID(fileId string) error
 	Save(file *model.File) error
 }
@@ -69,15 +68,6 @@ func (store *GormFileDataStore) FindByToken(token string) (*model.File, error) {
 		return nil, nil
 	}
 	return file, nil
-}
-
-func (store *GormFileDataStore) FindByUserIDAndFileID(userId uint, fileId string) (*model.File, error) {
-	var file model.File
-	tx := store.db.Where(&model.File{ID: fileId, UserID: userId}).First(&file)
-	if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
-		return nil, nil
-	}
-	return &file, tx.Error
 }
 
 func (store *GormFileDataStore) FindByUserID(userId uint) (*[]model.File, error) {

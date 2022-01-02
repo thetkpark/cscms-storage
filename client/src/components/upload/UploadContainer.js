@@ -99,7 +99,7 @@ const UploadContainer = ({ type, handleUpload, setError, progress }) => {
 			</div>
 			{type === 'file' ? (
 				<div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}>
-					<div style={{ width: '280px', padding: '0 3rem' }}>
+					<div style={{ width: '280px', padding: '0 1rem' }}>
 						<div
 							style={{
 								display: 'flex',

@@ -4,7 +4,7 @@ import Icon from '../util/Icon'
 import axios from 'axios'
 import FileDetail from './FileDetail'
 import ImageDetail from './ImageDetail'
-const FileList = () => {
+const FileList = ({ setError }) => {
 	const [sort, setSort] = useState({ name: '', asc: true })
 	const [files, setFiles] = useState([])
 	const [displayFile, setDisplayFile] = useState([])
@@ -70,7 +70,7 @@ const FileList = () => {
 					<table className={styles.FileList}>
 						<thead>
 							<tr>
-								<th style={{ width: '35%' }}>
+								<th style={{ width: '45%' }}>
 									<div onClick={() => handleSort('filename')}>
 										Name{' '}
 										{sort.name === 'filename' && sort.asc ? (
@@ -80,7 +80,7 @@ const FileList = () => {
 										)}
 									</div>
 								</th>
-								<th style={{ width: '10%' }}>
+								<th style={{ width: '15%' }}>
 									<div onClick={() => handleSort('file_size')}>
 										Size{' '}
 										{sort.name === 'file_size' && sort.asc ? (
@@ -100,7 +100,7 @@ const FileList = () => {
 										)}
 									</div>
 								</th>
-								<th style={{ width: '30%' }}></th>
+								<th style={{ width: '15%' }}></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -117,9 +117,9 @@ const FileList = () => {
 									return (
 										<tr key={index} className={styles.Row}>
 											{file.type === 'file' ? (
-												<FileDetail file={file} />
+												<FileDetail setError={setError} file={file} />
 											) : (
-												<ImageDetail file={file} />
+												<ImageDetail setError={setError} file={file} />
 											)}
 										</tr>
 									)

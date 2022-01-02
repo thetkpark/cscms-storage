@@ -8,6 +8,8 @@ import (
 	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"log"
 	"math/rand"
 	"os"
 	"testing"
@@ -38,12 +40,17 @@ func createTestUser(provider string) *model.User {
 	}
 }
 
+func createGormDB() (*gorm.DB, error) {
+	gormLogger := logger.New(log.New(os.Stdout, "\r\n", log.LstdFlags), logger.Config{IgnoreRecordNotFoundError: true})
+	return gorm.Open(sqlite.Open(SqlitePath), &gorm.Config{Logger: gormLogger})
+}
+
 func TestGormUserDataStore(t *testing.T) {
 	suite.Run(t, new(GormUserDataStoreTestSuite))
 }
 
 func (s *GormUserDataStoreTestSuite) SetupTest() {
-	gormDB, err := gorm.Open(sqlite.Open(SqlitePath))
+	gormDB, err := createGormDB()
 	require.NoError(s.T(), err)
 	s.db = gormDB
 

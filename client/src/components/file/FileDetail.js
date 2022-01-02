@@ -3,7 +3,7 @@ import FileIcon from '../util/FileIcon'
 import { formatFileSize } from '../../utils/formatFileSize'
 import { formatDate } from '../../utils/formatText'
 import Icon from '../util/Icon'
-
+import styles from '../../styles/file/Detail.module.css';
 const FileDetail = ({ file }) => {
 	const copyToClipboard = () => {
 		var copyText = document.createElement('input')
@@ -23,7 +23,7 @@ const FileDetail = ({ file }) => {
 			<td>{formatFileSize(file.file_size)}</td>
 			<td>{formatDate(file.updated_at)}</td>
 			<td>
-				<div style={{ display: 'flex' }}>
+				<div className={styles.ActionList}>
 					<div>
 						<Icon name="edit" />
 					</div>

@@ -1,0 +1,32 @@
+.Box {
+    display: flex;
+    align-items: center;
+
+}
+.ImageBox {
+    margin-right: 1rem;
+}
+.Image {
+    border-radius: 30px;
+}
+.DetailBox {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+}
+.DetailBox .Name {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: .5rem;
+}
+.DetailBox .MyFiles {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    user-select: none;
+    cursor: pointer;
+}
+.DetailBox .MyFiles svg {
+    margin-right: .5rem;
+}

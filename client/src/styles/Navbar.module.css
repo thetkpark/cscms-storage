@@ -1,0 +1,21 @@
+.NavBar {
+	display: flex;
+	padding: 1.5rem 2.5rem;
+	justify-content: flex-end;
+	font-weight: 500;
+	font-size: 18px;
+	line-height: 27px;
+	color: #000;
+}
+.NavBar > div {
+	margin: 0 1rem;
+	cursor: pointer;
+	transition: all 0.15s ease-in-out;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	user-select: none;
+}
+.NavBar svg {
+	margin: 0 .5rem;
+}

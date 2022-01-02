@@ -239,15 +239,15 @@ func (h *FileRoutesHandler) IsOwnFile(c *fiber.Ctx) error {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to parse to user model", fmt.Errorf("user model convertion error"))
 	}
 
-	file, err := h.fileDataStore.FindByUserIDAndFileID(userModel.ID, fileId)
+	file, err := h.fileDataStore.FindByID(fileId)
 	if err != nil {
-		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to find file by id and user id", err)
+		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to find file by id", err)
 	}
-	if file == nil {
+	if file == nil || file.ExpiredAt.UTC().Before(time.Now().UTC()) {
+		return NewHTTPError(h.log, fiber.StatusNotFound, "File not found", nil)
+	}
+	if file.UserID != userModel.ID {
 		return NewHTTPError(h.log, fiber.StatusForbidden, "Forbidden", nil)
-	}
-	if file.ExpiredAt.UTC().Before(time.Now().UTC()) {
-		return NewHTTPError(h.log, fiber.StatusNotFound, "Not Found", nil)
 	}
 
 	c.SetUserContext(context.WithValue(c.UserContext(), "file", file))

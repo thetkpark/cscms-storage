@@ -119,7 +119,7 @@ func main() {
 		Max:        10,
 	}))
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "https://storage.cscms.me, http://localhost:5050",
+		AllowOrigins:     "https://storage.cscms.me, http://localhost:3000",
 		AllowMethods:     "GET POST PATCH DELETE",
 		AllowCredentials: true,
 	}))
@@ -155,8 +155,8 @@ func main() {
 
 	// User Authentication with Oauth
 	goth.UseProviders(
-		github.New(appENVs.OauthGitHubClientSecret, appENVs.OauthGitHubSecretKey, fmt.Sprintf("%s/auth/github/callback", appENVs.Entrypoint)),
-		google.New(appENVs.OAuthGoogleClientSecret, appENVs.OAuthGoogleSecretKey, fmt.Sprintf("%s/auth/google/callback", appENVs.Entrypoint)))
+		github.New(appENVs.OauthGitHubClientSecret, appENVs.OauthGitHubSecretKey, fmt.Sprintf("%s/auth/github/callback", appENVs.Entrypoint), "user:email"),
+		google.New(appENVs.OAuthGoogleClientSecret, appENVs.OAuthGoogleSecretKey, fmt.Sprintf("%s/auth/google/callback", appENVs.Entrypoint), "email", "profile"))
 
 	authPath := app.Group("/auth")
 	authPath.Get("/logout", authHandler.Logout)

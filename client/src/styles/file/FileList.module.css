@@ -57,13 +57,6 @@
 .FileList td svg {
 	margin-right: 0.5rem;
 }
-.FileList th:last-child {
-	width: 10%;
-}
-.EditIcon {
-	cursor: pointer;
-	user-select: none;
-}
 .Empty {
 	text-align: center;
 }

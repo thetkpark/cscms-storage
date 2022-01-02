@@ -69,6 +69,16 @@ func (s *GormUserDataStoreTestSuite) AfterTest(_, _ string) {
 	require.NoError(s.T(), os.Remove(SqlitePath))
 }
 
+func (s *GormUserDataStoreTestSuite) TestCreate() {
+	newUser := createTestUser("google")
+	user, err := s.store.Create(newUser.Email, newUser.Username, newUser.Provider, newUser.AvatarURL)
+	require.NoError(s.T(), err)
+
+	var queryUser model.User
+	require.NoError(s.T(), s.db.Where(user).First(&queryUser).Error)
+	require.Nil(s.T(), deep.Equal(user, &queryUser))
+}
+
 func (s *GormUserDataStoreTestSuite) TestFoundByID() {
 	foundUser, err := s.store.FindById(s.user.ID)
 	require.NoError(s.T(), err)

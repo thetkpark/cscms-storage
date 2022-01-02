@@ -25,14 +25,14 @@ type GormUserDataStoreTestSuite struct {
 	userRow *sqlmock.Rows
 }
 
-func createUser() *model.User {
+func createUser(provider string) *model.User {
 	return &model.User{
 		ID:        uint(rand.Uint32()),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		Email:     faker.Email(),
 		Username:  faker.Username(),
-		Provider:  "GitHub",
+		Provider:  provider,
 		AvatarURL: faker.URL(),
 		Files:     nil,
 		Images:    nil,
@@ -54,10 +54,10 @@ func (s *GormUserDataStoreTestSuite) SetupTest() {
 	s.store = &GormUserDataStore{db: gormDB}
 	require.NoError(s.T(), err)
 
-	s.user = createUser()
+	s.user = createUser("github")
 	require.NoError(s.T(), gormDB.Create(s.user).Error)
-	require.NoError(s.T(), gormDB.Create(createUser()).Error)
-	require.NoError(s.T(), gormDB.Create(createUser()).Error)
+	require.NoError(s.T(), gormDB.Create(createUser("github")).Error)
+	require.NoError(s.T(), gormDB.Create(createUser("google")).Error)
 }
 
 func (s *GormUserDataStoreTestSuite) AfterTest(_, _ string) {
@@ -71,7 +71,7 @@ func (s *GormUserDataStoreTestSuite) TestFoundByID() {
 }
 
 func (s *GormUserDataStoreTestSuite) TestNotFoundByID() {
-	newUser := createUser()
+	newUser := createUser("github")
 	foundUser, err := s.store.FindById(newUser.ID)
 	require.NoError(s.T(), err)
 	require.Nil(s.T(), foundUser)
@@ -84,7 +84,7 @@ func (s *GormUserDataStoreTestSuite) TestFoundByProviderAndEmail() {
 }
 
 func (s *GormUserDataStoreTestSuite) TestNotFoundByProviderAndEmail() {
-	newUser := createUser()
+	newUser := createUser("github")
 	foundUser, err := s.store.FindByProviderAndEmail(newUser.Provider, newUser.Email)
 	require.NoError(s.T(), err)
 	require.Nil(s.T(), foundUser)
@@ -97,7 +97,7 @@ func (s *GormUserDataStoreTestSuite) TestFoundByAPIKey() {
 }
 
 func (s *GormUserDataStoreTestSuite) TestNotFoundByAPIKey() {
-	newUser := createUser()
+	newUser := createUser("github")
 	foundUser, err := s.store.FindByAPIKey(newUser.APIKey)
 	require.NoError(s.T(), err)
 	require.Nil(s.T(), foundUser)
@@ -114,7 +114,7 @@ func (s *GormUserDataStoreTestSuite) TestUpdateAPIKey() {
 }
 
 func (s *GormUserDataStoreTestSuite) TestUpdateAPIKeyOnNotFoundUser() {
-	newUser := createUser()
+	newUser := createUser("github")
 	newApiKey := faker.UUIDDigit()
 	require.NoError(s.T(), s.store.UpdateAPIKey(newUser.ID, newApiKey))
 

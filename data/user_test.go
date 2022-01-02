@@ -47,6 +47,7 @@ func TestGormUserDataStore(t *testing.T) {
 func (s *GormUserDataStoreTestSuite) SetupTest() {
 	gormDB, err := gorm.Open(sqlite.Open(SqlitePath))
 	require.NoError(s.T(), err)
+	s.db = gormDB
 
 	require.NoError(s.T(), gormDB.AutoMigrate(&model.User{}))
 
@@ -63,8 +64,61 @@ func (s *GormUserDataStoreTestSuite) AfterTest(_, _ string) {
 	require.NoError(s.T(), os.Remove(SqlitePath))
 }
 
-func (s *GormUserDataStoreTestSuite) TestFindByID() {
+func (s *GormUserDataStoreTestSuite) TestFoundByID() {
 	foundUser, err := s.store.FindById(s.user.ID)
 	require.NoError(s.T(), err)
 	require.Nil(s.T(), deep.Equal(foundUser, s.user))
+}
+
+func (s *GormUserDataStoreTestSuite) TestNotFoundByID() {
+	newUser := createUser()
+	foundUser, err := s.store.FindById(newUser.ID)
+	require.NoError(s.T(), err)
+	require.Nil(s.T(), foundUser)
+}
+
+func (s *GormUserDataStoreTestSuite) TestFoundByProviderAndEmail() {
+	foundUser, err := s.store.FindByProviderAndEmail(s.user.Provider, s.user.Email)
+	require.NoError(s.T(), err)
+	require.Nil(s.T(), deep.Equal(foundUser, s.user))
+}
+
+func (s *GormUserDataStoreTestSuite) TestNotFoundByProviderAndEmail() {
+	newUser := createUser()
+	foundUser, err := s.store.FindByProviderAndEmail(newUser.Provider, newUser.Email)
+	require.NoError(s.T(), err)
+	require.Nil(s.T(), foundUser)
+}
+
+func (s *GormUserDataStoreTestSuite) TestFoundByAPIKey() {
+	foundUser, err := s.store.FindByAPIKey(s.user.APIKey)
+	require.NoError(s.T(), err)
+	require.Nil(s.T(), deep.Equal(foundUser, s.user))
+}
+
+func (s *GormUserDataStoreTestSuite) TestNotFoundByAPIKey() {
+	newUser := createUser()
+	foundUser, err := s.store.FindByAPIKey(newUser.APIKey)
+	require.NoError(s.T(), err)
+	require.Nil(s.T(), foundUser)
+}
+
+func (s *GormUserDataStoreTestSuite) TestUpdateAPIKey() {
+	newApiKey := faker.UUIDDigit()
+	require.NoError(s.T(), s.store.UpdateAPIKey(s.user.ID, newApiKey))
+
+	queryUser := &model.User{}
+	err := s.db.Where(&model.User{APIKey: newApiKey}).First(queryUser).Error
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), queryUser.ID, s.user.ID)
+}
+
+func (s *GormUserDataStoreTestSuite) TestUpdateAPIKeyOnNotFoundUser() {
+	newUser := createUser()
+	newApiKey := faker.UUIDDigit()
+	require.NoError(s.T(), s.store.UpdateAPIKey(newUser.ID, newApiKey))
+
+	queryUser := &model.User{}
+	err := s.db.Where(&model.User{APIKey: newApiKey}).First(queryUser).Error
+	require.ErrorIs(s.T(), err, gorm.ErrRecordNotFound)
 }

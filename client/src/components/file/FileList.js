@@ -1,9 +1,9 @@
 import { Fragment, useEffect, useState } from 'react'
-import FileIcon from '../util/FileIcon'
-import { formatFileSize } from '../../utils/formatFileSize'
 import styles from '../../styles/file/FileList.module.css'
 import Icon from '../util/Icon'
 import axios from 'axios'
+import FileDetail from './FileDetail'
+import ImageDetail from './ImageDetail'
 const FileList = () => {
 	const [sort, setSort] = useState({ name: '', asc: true })
 	const [files, setFiles] = useState([])
@@ -116,20 +116,11 @@ const FileList = () => {
 								displayFile.map((file, index) => {
 									return (
 										<tr key={index} className={styles.Row}>
-											<td>
-												<FileIcon
-													ext={file.filename.split('.')[1]}
-													type={file.file_type}
-												/>{' '}
-												{file.filename}
-											</td>
-											<td>{formatFileSize(file.file_size)}</td>
-											<td>{file.updated_at}</td>
-											<td>
-												<div className={styles.EditIcon}>
-													<Icon name="edit" />
-												</div>
-											</td>
+											{file.type === 'file' ? (
+												<FileDetail file={file} />
+											) : (
+												<ImageDetail file={file} />
+											)}
 										</tr>
 									)
 								})

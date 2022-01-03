@@ -1,8 +1,8 @@
 .Box {
-	min-height: 75vh;
 	display: flex;
 	flex-direction: column;
 	margin: 1rem auto;
+	flex: 1;
 }
 .BoxUpload {
 	background: white;
@@ -13,6 +13,7 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	z-index: 1;
 }
 .CustomBox {
 	margin-top: 1rem;
@@ -38,4 +39,50 @@
 .CustomSlugText {
 	margin-bottom: 1rem;
 	font-weight: 500;
+}
+.UploadButton {
+	border: none;
+	font-size: 0.9rem;
+	width: 170px;
+	height: 50px;
+	margin-top: 2rem;
+}
+
+@media screen and (max-width: 768px) {
+	.CustomDuration {
+		width: 260px;
+	}
+	.CustomSlug {
+		padding: 0 1rem;
+	}
+	.CustomSlug div[role='textbox'] {
+		width: 220px;
+	}
+}
+@media screen and (max-width: 480px) {
+	.BoxUpload {
+		width: calc(100% - 2.5rem);
+		padding: 1.25rem;
+		border-radius: 15px;
+	}
+	.CustomBox {
+		flex-direction: column;
+		font-size: 0.75rem;
+	}
+	.CustomDuration {
+		width: calc(100% - 1.5rem);
+	}
+	.CustomSlug div[role='textbox'] {
+		width: 180px;
+	}
+	.UploadButton {
+		margin-top: 1rem;
+		font-size: 0.75rem;
+		height: 40px;
+		width: 140px;
+	}
+	.UploadButton svg {
+		width: 20px;
+		height: 20px;
+	}
 }

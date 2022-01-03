@@ -39,3 +39,15 @@
 	margin-bottom: 1rem;
 	font-weight: 500;
 }
+
+@media screen and (max-width: 768px) {
+	.CustomDuration {
+		width: 260px;
+	}
+	.CustomSlug {
+		padding: 0 1rem;
+	}
+	.CustomSlug div[role="textbox"] {
+		width: 220px;
+	}
+}

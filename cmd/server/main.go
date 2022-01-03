@@ -43,15 +43,25 @@ func main() {
 	if appENVs.Env == "development" {
 		zapLogger, _ = zap.NewDevelopment()
 	}
-	defer zapLogger.Sync()
 	logger := zapLogger.Sugar()
+	defer func(zapLogger *zap.Logger) {
+		err := zapLogger.Sync()
+		if err != nil {
+			logger.Errorw("unable to flush logger", "error", err)
+		}
+	}(zapLogger)
 
 	// Create file in /tmp for livenessProbe
 	livenessProbeFilePath := "/tmp/cscms-storage-healthy"
 	if _, err := os.Create(livenessProbeFilePath); err != nil {
 		logger.Fatalw("Unable to create livenessProbe file", "error", err)
 	}
-	defer os.Remove(livenessProbeFilePath)
+	defer func(name string) {
+		err := os.Remove(name)
+		if err != nil {
+			logger.Errorw("unable to delete liveness probe file", "error", err)
+		}
+	}(livenessProbeFilePath)
 
 	app := router.NewFiberRouter()
 

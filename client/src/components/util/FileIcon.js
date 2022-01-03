@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 import Icon from './Icon'
-import styles from '../../styles/FileIcon.module.css'
+import styles from '../../styles/util/FileIcon.module.css'
 
 const FileIcon = ({ ext, type }) => {
 	const getDisplay = () => {

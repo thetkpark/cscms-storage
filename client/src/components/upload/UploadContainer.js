@@ -44,7 +44,6 @@ const UploadContainer = ({ type, handleUpload, setError, progress }) => {
 				duration,
 				clearFile: () => setSelectedFile(null)
 			})
-			
 		} catch (err) {
 			setError(err.response.data.message)
 		}
@@ -52,7 +51,7 @@ const UploadContainer = ({ type, handleUpload, setError, progress }) => {
 	return (
 		<div
 			style={{
-				height: '75vh',
+				minHeight: '75vh',
 				display: 'flex',
 				flexDirection: 'column',
 				margin: '1rem auto'

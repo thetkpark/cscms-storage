@@ -11,6 +11,8 @@
 	padding: 1rem 8rem;
 	display: flex;
 	flex-direction: column;
+	height: 85vh;
+	overflow: auto;
 }
 
 @media screen and (max-width: 1024px) {

@@ -67,13 +67,7 @@ const UploadContainer = ({ type, handleUpload, setError, progress }) => {
 				) : null}
 				<Button
 					bgColor={'#E9EEFF'}
-					style={{
-						border: 'none',
-						fontSize: '.9rem',
-						width: '170px',
-						height: '50px',
-						marginTop: '2rem'
-					}}
+					className={styles.UploadButton}
 					action={onClick}
 				>
 					<Icon name="upload" role="icon" /> Upload

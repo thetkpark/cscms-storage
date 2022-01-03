@@ -37,13 +37,13 @@ function App() {
 					}
 				})
 			})
-			.catch(err => {
+			.catch(() => {
 				setAuth({
 					isAuthenticated: false,
 					user: null
 				})
 			})
-	}, [])
+	}, [setAuth])
 	useEffect(() => {
 		if (auth.isAuthenticated) {
 			setDialog(null)

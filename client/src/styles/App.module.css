@@ -11,12 +11,17 @@
 	padding: 1rem 8rem;
 	display: flex;
 	flex-direction: column;
-	height: 85vh;
-	overflow: auto;
+	height: calc(100vh - 105px - 6rem);
 }
 
 @media screen and (max-width: 1024px) {
 	.ContentWrapper {
 		padding: 1rem 2rem 1rem 8rem;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.ContentWrapper {
+		padding: 1rem 2rem 1rem 6rem;
 	}
 }

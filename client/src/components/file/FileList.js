@@ -50,7 +50,7 @@ const FileList = ({ setError }) => {
 			})
 			setDisplayFile(temp)
 		}
-	}, [files, sort])
+	}, [sort])
 	const handleSort = type => {
 		if (type === sort.name) {
 			if (sort.asc) {

@@ -6,6 +6,7 @@ import (
 	"github.com/markbates/goth"
 	"github.com/thetkpark/cscms-temp-storage/data"
 	"github.com/thetkpark/cscms-temp-storage/handlers"
+	"github.com/thetkpark/cscms-temp-storage/router"
 	"github.com/thetkpark/cscms-temp-storage/service/encrypt"
 	"github.com/thetkpark/cscms-temp-storage/service/jwt"
 	"github.com/thetkpark/cscms-temp-storage/service/storage"
@@ -33,8 +34,6 @@ import (
 // @version 1.0
 // @description This is documentation for CSCMS Storage API
 func main() {
-	//logger := hclog.Default()
-
 	appENVs := ApplicationEnvironmentVariable{}
 	if err := env.Parse(&appENVs, env.Options{RequiredIfNoDef: true}); err != nil {
 		log.Fatalln("Failed to get app ENVs: ", err)
@@ -44,38 +43,27 @@ func main() {
 	if appENVs.Env == "development" {
 		zapLogger, _ = zap.NewDevelopment()
 	}
-	defer zapLogger.Sync()
 	logger := zapLogger.Sugar()
+	defer func(zapLogger *zap.Logger) {
+		err := zapLogger.Sync()
+		if err != nil {
+			logger.Errorw("unable to flush logger", "error", err)
+		}
+	}(zapLogger)
 
 	// Create file in /tmp for livenessProbe
 	livenessProbeFilePath := "/tmp/cscms-storage-healthy"
 	if _, err := os.Create(livenessProbeFilePath); err != nil {
 		logger.Fatalw("Unable to create livenessProbe file", "error", err)
 	}
-	defer os.Remove(livenessProbeFilePath)
+	defer func(name string) {
+		err := os.Remove(name)
+		if err != nil {
+			logger.Errorw("unable to delete liveness probe file", "error", err)
+		}
+	}(livenessProbeFilePath)
 
-	app := fiber.New(fiber.Config{
-		BodyLimit: 150 << 20,
-		ErrorHandler: func(c *fiber.Ctx, err error) error {
-			// Default to 500
-			code := fiber.StatusInternalServerError
-			message := err.Error()
-
-			// Check if error is fiber.Error type
-			if e, ok := err.(*fiber.Error); ok {
-				// Override status code if fiber.Error type
-				code = e.Code
-				message = e.Message
-			}
-
-			c.Status(code)
-
-			return c.JSON(fiber.Map{
-				"code":    code,
-				"message": message,
-			})
-		},
-	})
+	app := router.NewFiberRouter()
 
 	// Create data store
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", appENVs.DB.Username, appENVs.DB.Password, appENVs.DB.Host, appENVs.DB.Port, appENVs.DB.DatabaseName)

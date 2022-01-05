@@ -35,6 +35,7 @@ const FileList = ({ setError }) => {
 	useEffect(() => {
 		if (sort.name === '') {
 			setDisplayFile(files)
+			setSort({ name: '', asc: true })
 		} else {
 			let temp = [...files].sort((a, b) => {
 				if (sort.name === 'size') {
@@ -117,9 +118,17 @@ const FileList = ({ setError }) => {
 									return (
 										<tr key={index} className={styles.Row}>
 											{file.type === 'file' ? (
-												<FileDetail fetchFiles={fetchFiles} setError={setError} file={file} />
+												<FileDetail
+													fetchFiles={fetchFiles}
+													setError={setError}
+													file={file}
+												/>
 											) : (
-												<ImageDetail fetchFiles={fetchFiles} setError={setError} file={file} />
+												<ImageDetail
+													fetchFiles={fetchFiles}
+													setError={setError}
+													file={file}
+												/>
 											)}
 										</tr>
 									)

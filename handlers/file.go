@@ -47,7 +47,7 @@ func NewFileRoutesHandler(log *zap.SugaredLogger, enc encrypt.Manager, data data
 // @Failure      400  {object}  handlers.ErrorResponse
 // @Failure      500  {object}  handlers.ErrorResponse
 // @Router /api/file [post]
-func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
+func (h *FileRoutesHandler) UploadFile(c Context) error {
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to get file from form-data", err)
@@ -74,7 +74,7 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 
 	// Check store duration (in day)
 	storeDuration := h.maxStoreDuration
-	if dayString := c.Query("duration"); len(dayString) > 0 {
+	if dayString := c.Query("duration", ""); len(dayString) > 0 {
 		day, err := strconv.Atoi(dayString)
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, "duration must be integer")
@@ -155,8 +155,8 @@ func (h *FileRoutesHandler) UploadFile(c *fiber.Ctx) error {
 // @Success      200
 // @Failure      500  {object}  handlers.ErrorResponse
 // @Router /{token} [get]
-func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
-	t := strings.ToLower(c.Params("token"))
+func (h *FileRoutesHandler) GetFile(c Context) error {
+	t := strings.ToLower(c.Params("token", ""))
 
 	// Find file by token
 	fileInfo, err := h.fileDataStore.FindByToken(t)
@@ -210,7 +210,7 @@ func (h *FileRoutesHandler) GetFile(c *fiber.Ctx) error {
 // @Success      200  {array} model.File
 // @Failure      500  {object}  handlers.ErrorResponse
 // @Router /api/file [get]
-func (h *FileRoutesHandler) GetOwnFiles(c *fiber.Ctx) error {
+func (h *FileRoutesHandler) GetOwnFiles(c Context) error {
 	// Get userId
 	user := c.UserContext().Value("user")
 	userModel, ok := user.(*model.User)
@@ -266,7 +266,7 @@ func (h *FileRoutesHandler) IsOwnFile(c *fiber.Ctx) error {
 // @Failure      403  {object}  handlers.ErrorResponse
 // @Failure      500  {object}  handlers.ErrorResponse
 // @Router /api/file/{fileID} [delete]
-func (h *FileRoutesHandler) DeleteFile(c *fiber.Ctx) error {
+func (h *FileRoutesHandler) DeleteFile(c Context) error {
 	fileModel, ok := c.UserContext().Value("file").(*model.File)
 	if !ok {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to parse file model", fmt.Errorf("unable to parse file model"))
@@ -300,7 +300,7 @@ func (h *FileRoutesHandler) DeleteFile(c *fiber.Ctx) error {
 // @Failure      403  {object}  handlers.ErrorResponse
 // @Failure      500  {object}  handlers.ErrorResponse
 // @Router /api/file/{fileID} [patch]
-func (h *FileRoutesHandler) EditToken(c *fiber.Ctx) error {
+func (h *FileRoutesHandler) EditToken(c Context) error {
 	fileModel, ok := c.UserContext().Value("file").(*model.File)
 	if !ok {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "unable to parse file model", fmt.Errorf("unable to parse file model"))

@@ -10,15 +10,15 @@ type Context interface {
 	UserContext() context.Context
 	SetUserContext(ctx context.Context)
 	BaseURL() string
-	Get(key, defaultValue string) string
+	Get(key string, defaultValue ...string) string
 	Set(key, value string)
 	FormFile(key string) (*multipart.FileHeader, error)
-	Query(key, defaultValue string) string
-	Params(key, defaultValue string) string
+	Query(key string, defaultValue ...string) string
+	Params(key string, defaultValue ...string) string
 	Status(code int) Context
 	Redirect(location string) error
 	JSON(v interface{}) error
-	SendStream(stream io.Reader, size int) error
+	SendStream(stream io.Reader, size ...int) error
 	SendStatus(code int) error
 	Next() error
 	Error(code int, message string, error error) error

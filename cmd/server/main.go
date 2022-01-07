@@ -131,10 +131,10 @@ func main() {
 	apiPath := app.Group("/api", authHandler.ParseUser)
 
 	filePath := apiPath.Group("/file")
-	filePath.Post("/", fileHandler.UploadFile)
-	filePath.Get("/", authHandler.AuthenticatedOnly, fileHandler.GetOwnFiles)
-	filePath.Patch("/:fileID", authHandler.AuthenticatedOnly, fileHandler.IsOwnFile, fileHandler.EditToken)
-	filePath.Delete("/:fileID", authHandler.AuthenticatedOnly, fileHandler.IsOwnFile, fileHandler.DeleteFile)
+	filePath.Post("/", router.CreateFiberHandler(fileHandler.UploadFile, logger))
+	filePath.Get("/", authHandler.AuthenticatedOnly, router.CreateFiberHandler(fileHandler.GetOwnFiles, logger))
+	filePath.Patch("/:fileID", authHandler.AuthenticatedOnly, fileHandler.IsOwnFile, router.CreateFiberHandler(fileHandler.EditToken, logger))
+	filePath.Delete("/:fileID", authHandler.AuthenticatedOnly, fileHandler.IsOwnFile, router.CreateFiberHandler(fileHandler.DeleteFile, logger))
 
 	imagePath := apiPath.Group("/image")
 	imagePath.Post("/", imageHandler.UploadImage)
@@ -157,7 +157,7 @@ func main() {
 	app.Static("/", "./client/build")
 	app.Static("/404", "./client/build")
 	app.Get("/swagger/*", swagger.Handler)
-	app.Get("/:token", fileHandler.GetFile)
+	app.Get("/:token", router.CreateFiberHandler(fileHandler.GetFile, logger))
 
 	// Graceful Shutdown
 	sigChan := make(chan os.Signal, 1)

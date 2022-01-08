@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"github.com/stretchr/testify/mock"
 	"github.com/thetkpark/cscms-temp-storage/data/model"
 	"io"
+	"mime/multipart"
 )
 
 type MockImageDataStore struct {
@@ -162,4 +164,81 @@ func (m *MockEncryptionManager) Encrypt(input io.Reader) (io.Reader, string, err
 func (m *MockEncryptionManager) Decrypt(input io.Reader, nonceString string) (io.Reader, error) {
 	args := m.Called(input, nonceString)
 	return args.Get(0).(io.Reader), args.Error(1)
+}
+
+type MockContext struct {
+	mock.Mock
+}
+
+func (m *MockContext) UserContext() context.Context {
+	args := m.Called()
+	return args.Get(0).(context.Context)
+}
+
+func (m *MockContext) SetUserContext(ctx context.Context) {
+	_ = m.Called(ctx)
+}
+
+func (m *MockContext) BaseURL() string {
+	args := m.Called()
+	return args.String(0)
+}
+
+func (m *MockContext) Get(key string, defaultValue ...string) string {
+	args := m.Called(key, defaultValue)
+	return args.String(0)
+}
+
+func (m *MockContext) Set(key, value string) {
+	_ = m.Called(key, value)
+}
+
+func (m *MockContext) FormFile(key string) (*multipart.FileHeader, error) {
+	args := m.Called(key)
+	return args.Get(0).(*multipart.FileHeader), args.Error(1)
+}
+
+func (m *MockContext) Query(key string, defaultValue ...string) string {
+	args := m.Called(key, defaultValue)
+	return args.String(0)
+}
+
+func (m *MockContext) Params(key string, defaultValue ...string) string {
+	args := m.Called(key, defaultValue)
+	return args.String(0)
+}
+
+func (m *MockContext) Status(code int) Context {
+	args := m.Called(code)
+	return args.Get(0).(Context)
+}
+
+func (m *MockContext) Redirect(location string) error {
+	args := m.Called(location)
+	return args.Error(0)
+}
+
+func (m *MockContext) JSON(v interface{}) error {
+	args := m.Called(v)
+	return args.Error(0)
+}
+
+func (m *MockContext) SendStream(stream io.Reader, size ...int) error {
+	args := m.Called(stream, size)
+	return args.Error(0)
+}
+
+func (m *MockContext) SendStatus(code int) error {
+	args := m.Called(code)
+	return args.Error(0)
+}
+
+func (m *MockContext) Next() error {
+	args := m.Called()
+	return args.Error(0)
+}
+
+func (m *MockContext) Error(code int, message string, error error) error {
+	args := m.Called(code, message, error)
+	return args.Error(0)
 }

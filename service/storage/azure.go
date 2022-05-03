@@ -25,9 +25,11 @@ func NewAzureImageStorageManager(l *zap.SugaredLogger, connectionString string, 
 	}, nil
 }
 
-func (a *AzureImageStorageManager) UploadImage(fileName string, file io.ReadSeekCloser) error {
+func (a *AzureImageStorageManager) UploadImage(fileName, mimeType string, file io.ReadSeekCloser) error {
 	bbClient := a.containerClient.NewBlockBlobClient(fileName)
-	_, err := bbClient.UploadStreamToBlockBlob(context.Background(), file, azblob.UploadStreamToBlockBlobOptions{})
+	_, err := bbClient.Upload(context.Background(), file, &azblob.UploadBlockBlobOptions{
+		HTTPHeaders: &azblob.BlobHTTPHeaders{ BlobContentType: &mimeType },
+	})
 	if err != nil {
 		a.log.Errorw("Failed to upload file to az blob", "error", err)
 	}

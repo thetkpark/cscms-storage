@@ -11,6 +11,6 @@ type FileManager interface {
 }
 
 type ImageManager interface {
-	UploadImage(fileName string, file io.ReadSeekCloser) error
+	UploadImage(fileName string, mimeType string,file io.ReadSeekCloser) error
 	DeleteImage(fileName string) error
 }

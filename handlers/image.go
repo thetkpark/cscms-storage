@@ -54,7 +54,8 @@ func (h *ImageRouteHandler) UploadImage(c *fiber.Ctx) error {
 		return NewHTTPError(h.log, fiber.StatusRequestEntityTooLarge, "Image file too large", nil)
 	}
 	// Check image format and get extension
-	fileExtension, err := h.validateFileFormat(fileHeader.Header.Get("Content-Type"), fileHeader.Filename)
+	imageMimeType := fileHeader.Header.Get("Content-Type")
+	fileExtension, err := h.validateFileFormat(imageMimeType, fileHeader.Filename)
 	if err != nil {
 		return NewHTTPError(h.log, fiber.StatusBadRequest, "Invalid file extension", err)
 	}
@@ -71,7 +72,7 @@ func (h *ImageRouteHandler) UploadImage(c *fiber.Ctx) error {
 	}
 
 	// Upload the image to storage
-	if err := h.imageStoreManager.UploadImage(imagePath, file); err != nil {
+	if err := h.imageStoreManager.UploadImage(imagePath, imageMimeType, file); err != nil {
 		return NewHTTPError(h.log, fiber.StatusInternalServerError, "Unable to upload image", err)
 	}
 

@@ -5,7 +5,6 @@ go 1.15
 require (
 	cloud.google.com/go v0.90.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v0.2.0
-	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/arsmn/fiber-swagger/v2 v2.20.0
 	github.com/bxcodec/faker/v3 v3.7.0
 	github.com/caarlos0/env/v6 v6.8.0

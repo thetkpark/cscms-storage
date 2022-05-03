@@ -7,7 +7,7 @@ COPY ./client ./
 RUN yarn build
 
 
-FROM golang:alpine as server-builder
+FROM golang:1.17-alpine as server-builder
 ENV GOOS=linux
 ENV GOARCH=amd64
 RUN apk add build-base

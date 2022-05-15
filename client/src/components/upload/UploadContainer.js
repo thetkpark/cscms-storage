@@ -101,7 +101,7 @@ const UploadContainer = ({ type, handleUpload, setError, progress }) => {
 								role="textbox"
 								placeholder="slug"
 								value={slug}
-								onChange={(event, val) => setSlug(val)}
+								onChange={e => setSlug(e.target.value)}
 							/>
 						</div>
 					</div>
